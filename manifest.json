@@ -2,7 +2,7 @@
   "name": "UniMote - Controle Remoto Universal",
   "short_name": "UniMote",
   "description": "Controle Remoto Universal para Smart TV e IR TV",
-  "start_url": "/index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a0a0f",
@@ -27,12 +27,12 @@
   "shortcuts": [
     {
       "name": "Controle Remoto",
-      "url": "/index.html#remote",
+      "url": "./index.html#remote",
       "description": "Abrir controle remoto"
     },
     {
       "name": "Espelhamento",
-      "url": "/index.html#mirroring",
+      "url": "./index.html#mirroring",
       "description": "Screen Mirroring"
     }
   ]
