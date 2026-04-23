@@ -3,906 +3,1098 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>UniMote - Controle Universal</title>
+<title>UniMote - Controle Remoto Universal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Exo+2:wght@300;400;600&display=swap');
+  :root {
+    --bg-primary: #0a0a0f;
+    --bg-card: #12121a;
+    --bg-card2: #1a1a28;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --text: #e8e8f0;
+    --text-muted: #7a7a9a;
+    --border: #2a2a3a;
+    --glow: rgba(108,99,255,0.4);
+    --glow2: rgba(255,101,132,0.4);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; background:var(--bg-primary); color:var(--text); font-family:'Exo 2',sans-serif; overflow:hidden; }
 
-:root {
-  --bg: #0d0d14;
-  --bg2: #13131f;
-  --bg3: #1a1a2e;
-  --accent: #00f5d4;
-  --accent2: #f72585;
-  --accent3: #7209b7;
-  --text: #e0e0f0;
-  --text2: #8888aa;
-  --card: #16162a;
-  --border: #2a2a4a;
-  --success: #06d6a0;
-  --warning: #ffd166;
-  --danger: #ef476f;
-}
+  /* ============ SCREENS ============ */
+  .screen { display:none; height:100vh; overflow-y:auto; overflow-x:hidden; flex-direction:column; }
+  .screen.active { display:flex; }
 
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  /* ============ SPLASH ============ */
+  #splash {
+    align-items:center; justify-content:center;
+    background: radial-gradient(ellipse at 30% 20%, #1a0a3a 0%, #0a0a0f 60%),
+                radial-gradient(ellipse at 80% 80%, #0a1a2a 0%, transparent 50%);
+  }
+  .splash-logo { text-align:center; animation: splashIn 1s ease forwards; }
+  .splash-logo .icon { font-size:80px; margin-bottom:16px; display:block;
+    filter: drop-shadow(0 0 30px var(--accent)); animation: pulse 2s infinite; }
+  .splash-title { font-family:'Orbitron',sans-serif; font-size:36px; font-weight:900;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    letter-spacing:4px; }
+  .splash-sub { color:var(--text-muted); font-size:13px; letter-spacing:6px;
+    text-transform:uppercase; margin-top:8px; }
+  .splash-bar { width:200px; height:3px; background:var(--border); border-radius:2px;
+    margin:40px auto 0; overflow:hidden; }
+  .splash-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2));
+    animation: loadBar 2s ease forwards; }
+  @keyframes loadBar { from{width:0} to{width:100%} }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+  @keyframes splashIn { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:none} }
 
-body {
-  font-family: 'Exo 2', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+  /* ============ TOPBAR ============ */
+  .topbar {
+    background:var(--bg-card); border-bottom:1px solid var(--border);
+    padding:12px 16px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100; flex-shrink:0;
+  }
+  .topbar-title { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .topbar-btn { background:none; border:none; color:var(--text-muted); font-size:22px;
+    cursor:pointer; padding:4px; transition:color 0.2s; }
+  .topbar-btn:hover { color:var(--accent); }
+  .signal-dot { width:8px; height:8px; border-radius:50%; background:var(--accent3);
+    display:inline-block; margin-right:6px; animation:blink 1.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-/* GRID BACKGROUND */
-body::before {
-  content:'';
-  position:fixed;
-  inset:0;
-  background-image: 
-    linear-gradient(rgba(0,245,212,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,245,212,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events:none;
-  z-index:0;
-}
+  /* ============ BOTTOM NAV ============ */
+  .bottomnav {
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--bg-card); border-top:1px solid var(--border);
+    display:flex; z-index:200; padding-bottom:env(safe-area-inset-bottom);
+  }
+  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center;
+    padding:10px 4px 8px; cursor:pointer; transition:all 0.2s; color:var(--text-muted); }
+  .nav-item.active { color:var(--accent); }
+  .nav-item .nav-icon { font-size:22px; margin-bottom:3px; }
+  .nav-item .nav-label { font-size:10px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; }
 
-/* NAV */
-nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(13,13,20,0.95);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-}
+  /* ============ CONTENT AREA ============ */
+  .content { flex:1; padding:16px; padding-bottom:80px; }
 
-.logo {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 24px;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--accent), var(--accent3));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: 2px;
-}
+  /* ============ HOME SCREEN ============ */
+  #home .hero-section { text-align:center; padding:24px 0 20px; }
+  #home .hero-section h2 { font-family:'Orbitron',sans-serif; font-size:22px; font-weight:700; }
+  #home .hero-section p { color:var(--text-muted); font-size:13px; margin-top:6px; }
 
-.status-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--text2);
-  display: inline-block;
-  margin-right: 6px;
-  transition: background 0.3s;
-}
-.status-dot.connected { background: var(--success); box-shadow: 0 0 8px var(--success); }
+  .device-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+  .device-card {
+    background:var(--bg-card2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px 12px; text-align:center; cursor:pointer; transition:all 0.25s;
+    position:relative; overflow:hidden;
+  }
+  .device-card:active { transform:scale(0.96); }
+  .device-card.connected { border-color:var(--accent3); }
+  .device-card .dc-icon { font-size:32px; margin-bottom:8px; display:block; }
+  .device-card .dc-name { font-size:13px; font-weight:600; }
+  .device-card .dc-brand { font-size:11px; color:var(--text-muted); margin-top:3px; }
+  .device-card .dc-status { font-size:10px; margin-top:6px; padding:2px 8px;
+    border-radius:20px; display:inline-block; }
+  .device-card.connected .dc-status { background:rgba(67,233,123,0.15); color:var(--accent3); }
+  .device-card:not(.connected) .dc-status { background:rgba(122,122,154,0.15); color:var(--text-muted); }
+  .device-card .glow-bg { position:absolute; top:-20px; right:-20px; width:80px; height:80px;
+    border-radius:50%; opacity:0.1; }
+  .device-card.connected .glow-bg { background:var(--accent3); }
 
-.status-text { font-size: 12px; color: var(--text2); }
+  .add-device-btn {
+    width:100%; padding:14px; border:2px dashed var(--border); border-radius:var(--radius);
+    background:none; color:var(--text-muted); font-family:'Exo 2',sans-serif; font-size:14px;
+    cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .add-device-btn:hover { border-color:var(--accent); color:var(--accent); }
 
-/* TABS */
-.tabs {
-  display: flex;
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 57px;
-  z-index: 99;
-}
+  .section-title { font-size:13px; font-weight:700; text-transform:uppercase;
+    letter-spacing:1px; color:var(--text-muted); margin-bottom:12px; margin-top:20px; }
 
-.tab {
-  flex: 1;
-  padding: 12px 8px;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text2);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-.tab-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+  .brand-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:8px;
+    scrollbar-width:none; }
+  .brand-row::-webkit-scrollbar { display:none; }
+  .brand-chip {
+    flex-shrink:0; background:var(--bg-card2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:8px 14px; font-size:12px; font-weight:600;
+    cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .brand-chip:active, .brand-chip.selected { border-color:var(--accent); color:var(--accent);
+    background:rgba(108,99,255,0.1); }
 
-/* PAGES */
-.page { display: none; padding: 16px; position: relative; z-index: 1; }
-.page.active { display: block; }
+  /* ============ REMOTE SCREEN ============ */
+  #remote .content { padding:12px; }
+  .remote-wrap { max-width:360px; margin:0 auto; }
 
-/* SECTION TITLE */
-.section-title {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 13px;
-  letter-spacing: 3px;
-  color: var(--accent);
-  text-transform: uppercase;
-  margin: 20px 0 12px;
-  opacity: 0.8;
-}
+  .remote-device-info {
+    background:var(--bg-card2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:12px 16px; display:flex; align-items:center; gap:12px; margin-bottom:16px;
+  }
+  .rdi-icon { font-size:28px; }
+  .rdi-text .rdi-name { font-size:15px; font-weight:700; }
+  .rdi-text .rdi-brand { font-size:12px; color:var(--text-muted); }
+  .rdi-conn { margin-left:auto; display:flex; align-items:center; gap:4px; font-size:11px; color:var(--accent3); }
 
-/* DEVICE CARDS */
-.devices-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 16px;
-}
+  /* TOP BUTTONS ROW */
+  .btn-row { display:flex; gap:8px; margin-bottom:12px; }
+  .btn-top {
+    flex:1; height:44px; border:1px solid var(--border); border-radius:var(--radius-sm);
+    background:var(--bg-card2); color:var(--text); font-family:'Exo 2',sans-serif;
+    font-size:11px; font-weight:700; letter-spacing:0.5px; cursor:pointer;
+    transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:4px;
+  }
+  .btn-top:active { transform:scale(0.93); background:rgba(108,99,255,0.2); border-color:var(--accent); }
+  .btn-power { border-color:var(--accent2) !important; color:var(--accent2); }
+  .btn-power:active { background:rgba(255,101,132,0.2) !important; }
 
-.device-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-.device-card::before {
-  content:'';
-  position:absolute;
-  top:0; left:0; right:0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent3), var(--accent));
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.device-card.selected, .device-card:active { 
-  border-color: var(--accent);
-  transform: scale(0.98);
-}
-.device-card.selected::before { opacity: 1; }
+  /* D-PAD */
+  .dpad-section { position:relative; width:220px; height:220px; margin:0 auto 16px; }
+  .dpad-ring {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:180px; height:180px; border-radius:50%;
+    border:2px solid transparent;
+    background:linear-gradient(var(--bg-card),var(--bg-card)) padding-box,
+               linear-gradient(135deg,var(--accent),var(--accent2)) border-box;
+    box-shadow:0 0 30px var(--glow), inset 0 0 20px rgba(108,99,255,0.05);
+  }
+  .dpad-btn {
+    position:absolute; width:58px; height:58px; border-radius:50%;
+    background:var(--bg-card2); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; cursor:pointer; transition:all 0.15s; color:var(--text);
+  }
+  .dpad-btn:active { background:rgba(108,99,255,0.25); border-color:var(--accent);
+    box-shadow:0 0 15px var(--glow); transform:scale(0.92); }
+  .dpad-up    { top:0;   left:50%; transform:translateX(-50%); }
+  .dpad-down  { bottom:0; left:50%; transform:translateX(-50%); }
+  .dpad-left  { left:0;  top:50%; transform:translateY(-50%); }
+  .dpad-right { right:0; top:50%; transform:translateY(-50%); }
+  .dpad-ok {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    width:70px; height:70px; border-radius:50%;
+    background:linear-gradient(135deg, var(--accent), var(--accent2));
+    border:none; font-family:'Orbitron',sans-serif; font-weight:700; font-size:14px;
+    color:#fff; cursor:pointer; transition:all 0.15s;
+    box-shadow:0 0 20px var(--glow), 0 0 40px var(--glow2);
+  }
+  .dpad-ok:active { transform:translate(-50%,-50%) scale(0.9); box-shadow:0 0 10px var(--glow); }
 
-.device-icon { font-size: 32px; margin-bottom: 8px; }
-.device-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
-.device-info { font-size: 11px; color: var(--text2); }
-.device-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  padding: 3px 8px;
-  border-radius: 20px;
-  margin-top: 8px;
-  font-weight: 600;
-}
-.device-status.on { background: rgba(6,214,160,0.15); color: var(--success); }
-.device-status.off { background: rgba(136,136,170,0.1); color: var(--text2); }
+  .side-btns-wrap { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .side-btn {
+    width:52px; height:52px; border-radius:50%; background:var(--bg-card2);
+    border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+    font-size:18px; cursor:pointer; transition:all 0.15s; color:var(--text-muted);
+  }
+  .side-btn:active { transform:scale(0.92); color:var(--accent); border-color:var(--accent); }
 
-/* SCAN BUTTON */
-.btn-scan {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, var(--accent3), var(--accent));
-  border: none;
-  border-radius: 12px;
-  color: white;
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: opacity 0.2s;
-}
-.btn-scan:active { opacity: 0.8; }
+  /* VOL/CH SECTION */
+  .vol-ch-section { display:flex; gap:10px; margin-bottom:12px; align-items:center; }
+  .slider-group { flex:1; background:var(--bg-card2); border:1px solid var(--border);
+    border-radius:var(--radius); padding:12px 10px; }
+  .slider-label { font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:1px; color:var(--text-muted); text-align:center; margin-bottom:8px; }
+  .slider-btns { display:flex; flex-direction:column; gap:6px; }
+  .slider-btn {
+    width:100%; height:38px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--bg-card); color:var(--text); font-size:18px; cursor:pointer; transition:all 0.15s;
+  }
+  .slider-btn:active { background:rgba(108,99,255,0.2); border-color:var(--accent); transform:scale(0.95); }
+  .mute-center { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .mute-btn {
+    width:52px; height:52px; border-radius:50%; background:var(--bg-card2);
+    border:1px solid var(--border); font-size:20px; cursor:pointer; transition:all 0.15s;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .mute-btn:active { background:rgba(255,101,132,0.2); border-color:var(--accent2); transform:scale(0.92); }
+  .source-btn {
+    width:52px; height:52px; border-radius:50%; background:var(--bg-card2);
+    border:1px solid var(--border); font-size:18px; cursor:pointer; transition:all 0.15s;
+    display:flex; align-items:center; justify-content:center; color:var(--text-muted);
+  }
+  .source-btn:active { transform:scale(0.92); color:var(--accent); border-color:var(--accent); }
 
-/* BRAND CHIPS */
-.brands-row {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  scrollbar-width: none;
-  margin-bottom: 16px;
-}
-.brands-row::-webkit-scrollbar { display: none; }
+  /* NUMBER PAD */
+  .numpad { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .num-btn {
+    height:50px; border-radius:var(--radius-sm); background:var(--bg-card2);
+    border:1px solid var(--border); color:var(--text); font-family:'Exo 2',sans-serif;
+    font-size:16px; font-weight:700; cursor:pointer; transition:all 0.15s;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .num-btn .sub { font-size:8px; color:var(--text-muted); letter-spacing:1px; margin-top:1px; }
+  .num-btn:active { background:rgba(108,99,255,0.2); border-color:var(--accent); transform:scale(0.93); }
 
-.brand-chip {
-  flex-shrink: 0;
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text2);
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-.brand-chip.active {
-  background: rgba(0,245,212,0.1);
-  border-color: var(--accent);
-  color: var(--accent);
-}
+  /* MEDIA CONTROLS */
+  .media-row { display:flex; gap:8px; margin-bottom:12px; }
+  .media-btn {
+    flex:1; height:44px; border-radius:var(--radius-sm); background:var(--bg-card2);
+    border:1px solid var(--border); color:var(--text); font-size:18px;
+    cursor:pointer; transition:all 0.15s;
+  }
+  .media-btn:active { background:rgba(108,99,255,0.2); border-color:var(--accent); transform:scale(0.93); }
 
-/* REMOTE CONTROL */
-.remote {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 20px;
-  max-width: 320px;
-  margin: 0 auto;
-}
+  /* COLOR BUTTONS */
+  .color-row { display:flex; gap:8px; margin-bottom:12px; }
+  .color-btn {
+    flex:1; height:44px; border-radius:var(--radius-sm); border:none;
+    font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
+    cursor:pointer; transition:all 0.15s; color:#fff;
+  }
+  .color-btn:active { transform:scale(0.93); filter:brightness(1.3); }
+  .cb-a { background:#e53935; }
+  .cb-b { background:#f9a825; }
+  .cb-c { background:#43a047; }
+  .cb-d { background:#1e88e5; }
 
-.no-tv-msg {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text2);
-}
-.no-tv-msg .big-icon { font-size: 48px; margin-bottom: 12px; }
+  /* ============ CONTROL SCREEN ============ */
+  #control .content { padding:16px; }
+  .tabs { display:flex; gap:8px; margin-bottom:20px; background:var(--bg-card2);
+    border-radius:var(--radius-sm); padding:4px; border:1px solid var(--border); }
+  .tab-btn { flex:1; padding:8px 4px; border-radius:8px; border:none; background:none;
+    font-family:'Exo 2',sans-serif; font-size:12px; font-weight:600; color:var(--text-muted);
+    cursor:pointer; transition:all 0.2s; }
+  .tab-btn.active { background:var(--accent); color:#fff; }
 
-/* POWER ROW */
-.power-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
+  .shortcut-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .shortcut-card {
+    background:var(--bg-card2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px 12px; text-align:center; cursor:pointer; transition:all 0.2s;
+  }
+  .shortcut-card:active { transform:scale(0.96); border-color:var(--accent); }
+  .shortcut-card .sc-icon { font-size:28px; display:block; margin-bottom:8px; }
+  .shortcut-card .sc-name { font-size:12px; font-weight:600; }
+  .shortcut-card .sc-desc { font-size:10px; color:var(--text-muted); margin-top:2px; }
 
-.btn-power {
-  width: 52px; height: 52px;
-  border-radius: 50%;
-  border: 2px solid var(--danger);
-  background: rgba(239,71,111,0.1);
-  color: var(--danger);
-  font-size: 22px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.btn-power:active { background: var(--danger); color: white; transform: scale(0.9); }
+  .app-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:16px; }
+  .app-icon-btn {
+    background:var(--bg-card2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:12px 6px; text-align:center; cursor:pointer; transition:all 0.2s;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .app-icon-btn:active { transform:scale(0.93); border-color:var(--accent); }
+  .app-icon-btn .app-emoji { font-size:24px; }
+  .app-icon-btn .app-name { font-size:9px; color:var(--text-muted); }
 
-.btn-input {
-  padding: 8px 16px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: var(--bg3);
-  color: var(--text);
-  font-size: 13px;
-  cursor: pointer;
-}
+  /* ============ MIRRORING SCREEN ============ */
+  #mirroring .content { padding:16px; }
+  .mirror-hero {
+    background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(255,101,132,0.1));
+    border:1px solid rgba(108,99,255,0.3); border-radius:var(--radius);
+    padding:24px; text-align:center; margin-bottom:20px;
+  }
+  .mirror-hero .mh-icon { font-size:48px; display:block; margin-bottom:12px; }
+  .mirror-hero h3 { font-family:'Orbitron',sans-serif; font-size:18px; margin-bottom:8px; }
+  .mirror-hero p { color:var(--text-muted); font-size:13px; line-height:1.5; }
+  .btn-primary {
+    width:100%; padding:14px; border-radius:var(--radius-sm); border:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    color:#fff; font-family:'Exo 2',sans-serif; font-size:15px; font-weight:700;
+    cursor:pointer; transition:all 0.2s; margin-top:16px;
+    box-shadow: 0 4px 20px var(--glow);
+  }
+  .btn-primary:active { transform:scale(0.97); box-shadow:none; }
+  .mirror-options { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+  .mirror-opt {
+    background:var(--bg-card2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:16px 12px; text-align:center; cursor:pointer; transition:all 0.2s;
+  }
+  .mirror-opt:active { border-color:var(--accent); transform:scale(0.96); }
+  .mirror-opt .mo-icon { font-size:28px; margin-bottom:8px; display:block; }
+  .mirror-opt .mo-title { font-size:13px; font-weight:700; }
+  .mirror-opt .mo-sub { font-size:11px; color:var(--text-muted); margin-top:3px; }
 
-.btn-mute {
-  width: 44px; height: 44px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--bg3);
-  color: var(--text);
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn-mute:active { background: var(--warning); color: var(--bg); }
+  /* ============ SETTINGS SCREEN ============ */
+  #settings .content { padding:16px; }
+  .settings-section { margin-bottom:20px; }
+  .settings-group {
+    background:var(--bg-card2); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;
+  }
+  .setting-item {
+    display:flex; align-items:center; padding:14px 16px;
+    border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.15s;
+    gap:12px;
+  }
+  .setting-item:last-child { border-bottom:none; }
+  .setting-item:active { background:rgba(108,99,255,0.08); }
+  .si-icon { font-size:20px; width:32px; text-align:center; flex-shrink:0; }
+  .si-text { flex:1; }
+  .si-title { font-size:14px; font-weight:600; }
+  .si-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .si-arrow { color:var(--text-muted); font-size:14px; }
+  .toggle { width:44px; height:24px; border-radius:12px; background:var(--border);
+    position:relative; cursor:pointer; transition:background 0.2s; flex-shrink:0; }
+  .toggle.on { background:var(--accent); }
+  .toggle::after { content:''; position:absolute; width:18px; height:18px; border-radius:50%;
+    background:#fff; top:3px; left:3px; transition:transform 0.2s; }
+  .toggle.on::after { transform:translateX(20px); }
 
-/* D-PAD */
-.dpad {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
-  gap: 4px;
-  width: 180px;
-  height: 180px;
-  margin: 0 auto 20px;
-}
+  /* ============ ADMIN PANEL ============ */
+  #adminLogin {
+    align-items:center; justify-content:center; padding:20px;
+    background: radial-gradient(ellipse at 20% 30%, #0a0a2a 0%, #0a0a0f 60%);
+  }
+  .admin-box {
+    width:100%; max-width:360px; background:var(--bg-card);
+    border:1px solid var(--border); border-radius:var(--radius);
+    padding:32px 24px; text-align:center;
+  }
+  .admin-box .ab-icon { font-size:48px; display:block; margin-bottom:16px; }
+  .admin-box h2 { font-family:'Orbitron',sans-serif; font-size:20px; margin-bottom:6px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .admin-box p { color:var(--text-muted); font-size:12px; margin-bottom:24px; }
+  .input-group { margin-bottom:14px; text-align:left; }
+  .input-group label { font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:1px; color:var(--text-muted); display:block; margin-bottom:6px; }
+  .input-group input {
+    width:100%; padding:12px 14px; background:var(--bg-card2);
+    border:1px solid var(--border); border-radius:var(--radius-sm);
+    color:var(--text); font-family:'Exo 2',sans-serif; font-size:14px; outline:none;
+    transition:border-color 0.2s;
+  }
+  .input-group input:focus { border-color:var(--accent); }
+  .login-error { color:var(--accent2); font-size:12px; margin-top:8px; display:none; }
+  .login-error.show { display:block; }
 
-.dpad-btn {
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--text);
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-  -webkit-user-select: none;
-}
-.dpad-btn:active { background: var(--accent); color: var(--bg); transform: scale(0.92); }
-.dpad-center {
-  background: linear-gradient(135deg, var(--accent3), var(--accent));
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-  border: none;
-}
-.dpad-center:active { opacity: 0.8; transform: scale(0.92); }
-.dpad-empty { background: transparent; border: none; pointer-events: none; }
+  /* ============ ADMIN DASHBOARD ============ */
+  #adminPanel { background:var(--bg-primary); }
+  .admin-topbar {
+    background:linear-gradient(135deg,rgba(108,99,255,0.2),rgba(255,101,132,0.1));
+    border-bottom:1px solid rgba(108,99,255,0.3);
+    padding:14px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0;
+  }
+  .admin-topbar-icon { font-size:24px; }
+  .admin-topbar-title { font-family:'Orbitron',sans-serif; font-size:16px; font-weight:700;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .admin-logout { margin-left:auto; background:none; border:1px solid var(--border);
+    color:var(--text-muted); padding:6px 12px; border-radius:var(--radius-sm);
+    font-size:12px; cursor:pointer; }
 
-/* VOLUME CHANNEL */
-.vol-ch-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
-}
+  .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+  .stat-card { background:var(--bg-card2); border:1px solid var(--border);
+    border-radius:var(--radius); padding:16px; text-align:center; }
+  .stat-card .sv { font-family:'Orbitron',sans-serif; font-size:28px; font-weight:900;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .stat-card .sl { font-size:11px; color:var(--text-muted); text-transform:uppercase;
+    letter-spacing:1px; margin-top:4px; }
 
-.vol-ch-group {
-  flex: 1;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 12px;
-  text-align: center;
-}
+  .admin-section { margin-bottom:20px; }
+  .admin-section h3 { font-size:13px; font-weight:700; text-transform:uppercase;
+    letter-spacing:1px; color:var(--text-muted); margin-bottom:10px; }
+  .admin-item {
+    background:var(--bg-card2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:14px 16px; display:flex; align-items:center; gap:12px; margin-bottom:8px;
+    cursor:pointer; transition:all 0.2s;
+  }
+  .admin-item:active { border-color:var(--accent); }
+  .admin-item .ai-icon { font-size:20px; width:32px; text-align:center; }
+  .admin-item .ai-text { flex:1; }
+  .admin-item .ai-title { font-size:14px; font-weight:600; }
+  .admin-item .ai-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+  .badge { padding:3px 8px; border-radius:20px; font-size:10px; font-weight:700; }
+  .badge-green { background:rgba(67,233,123,0.15); color:var(--accent3); }
+  .badge-red { background:rgba(255,101,132,0.15); color:var(--accent2); }
+  .badge-blue { background:rgba(108,99,255,0.15); color:var(--accent); }
 
-.group-label {
-  font-size: 10px;
-  color: var(--text2);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
+  .device-list-admin .dla-item {
+    background:var(--bg-card2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:12px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px;
+  }
+  .dla-item .dla-icon { font-size:22px; }
+  .dla-item .dla-info { flex:1; }
+  .dla-item .dla-name { font-size:13px; font-weight:600; }
+  .dla-item .dla-brand { font-size:11px; color:var(--text-muted); }
+  .dla-item .dla-actions { display:flex; gap:6px; }
+  .btn-sm {
+    padding:5px 10px; border-radius:6px; font-size:11px; font-weight:600;
+    cursor:pointer; border:none; transition:all 0.15s;
+  }
+  .btn-sm-edit { background:rgba(108,99,255,0.2); color:var(--accent); }
+  .btn-sm-del { background:rgba(255,101,132,0.2); color:var(--accent2); }
+  .btn-sm:active { transform:scale(0.93); }
 
-.plus-minus {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
+  /* ============ MODAL ============ */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:500;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal-sheet {
+    width:100%; max-width:480px; background:var(--bg-card);
+    border-radius:24px 24px 0 0; border-top:1px solid var(--border);
+    padding:20px 20px 40px; max-height:80vh; overflow-y:auto;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+  .modal-handle { width:36px; height:4px; background:var(--border); border-radius:2px;
+    margin:0 auto 16px; }
+  .modal-title { font-family:'Orbitron',sans-serif; font-size:16px; font-weight:700; margin-bottom:16px; text-align:center; }
 
-.btn-pm {
-  width: 100%;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text);
-  font-size: 18px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.btn-pm:active { background: var(--accent); color: var(--bg); transform: scale(0.95); }
+  /* TOAST */
+  .toast {
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--bg-card2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:10px 18px; font-size:13px; z-index:600; opacity:0;
+    transition:all 0.3s; pointer-events:none; white-space:nowrap;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-/* MEDIA CONTROLS */
-.media-row {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
+  /* ============ SCAN ANIMATION ============ */
+  .scan-container { text-align:center; padding:30px 0; }
+  .scan-ring {
+    width:120px; height:120px; border-radius:50%; margin:0 auto 20px;
+    border:3px solid var(--accent); position:relative;
+    animation: scanPulse 1.5s infinite;
+    display:flex; align-items:center; justify-content:center; font-size:40px;
+  }
+  @keyframes scanPulse {
+    0%{box-shadow:0 0 0 0 var(--glow)}
+    70%{box-shadow:0 0 0 20px transparent}
+    100%{box-shadow:0 0 0 0 transparent}
+  }
 
-.btn-media {
-  width: 48px; height: 48px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg3);
-  color: var(--text);
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-}
-.btn-media:active { background: var(--accent3); color: white; transform: scale(0.9); }
-
-/* APPS ROW */
-.apps-row {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.btn-app {
-  padding: 8px 14px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: var(--bg3);
-  color: var(--text2);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.btn-app:active { border-color: var(--accent); color: var(--accent); }
-
-/* NUMBER PAD */
-.numpad {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.btn-num {
-  padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg3);
-  color: var(--text);
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: center;
-}
-.btn-num:active { background: var(--accent3); color: white; transform: scale(0.95); }
-
-/* TOAST */
-.toast {
-  position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: var(--card);
-  border: 1px solid var(--accent);
-  color: var(--text);
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 13px;
-  z-index: 999;
-  opacity: 0;
-  transition: all 0.3s;
-  white-space: nowrap;
-  pointer-events: none;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ADD DEVICE MODAL */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.8);
-  z-index: 200;
-  align-items: flex-end;
-  justify-content: center;
-}
-.modal-overlay.show { display: flex; }
-
-.modal {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 24px 24px 0 0;
-  padding: 24px 20px;
-  width: 100%;
-  max-width: 500px;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.modal-title {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: var(--accent);
-  letter-spacing: 1px;
-}
-
-.form-group { margin-bottom: 16px; }
-.form-label { font-size: 12px; color: var(--text2); letter-spacing: 1px; margin-bottom: 6px; display: block; }
-.form-input, .form-select {
-  width: 100%;
-  padding: 12px 16px;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--text);
-  font-size: 14px;
-  font-family: 'Exo 2', sans-serif;
-  outline: none;
-}
-.form-input:focus, .form-select:focus { border-color: var(--accent); }
-.form-select option { background: var(--bg3); }
-
-.modal-btns { display: flex; gap: 10px; margin-top: 20px; }
-.btn-cancel {
-  flex: 1; padding: 14px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text2);
-  font-size: 15px;
-  cursor: pointer;
-}
-.btn-confirm {
-  flex: 2; padding: 14px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg, var(--accent3), var(--accent));
-  color: white;
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  cursor: pointer;
-}
-
-/* SCANNING ANIMATION */
-.scanning {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 30px;
-}
-.scan-ring {
-  width: 80px; height: 80px;
-  border-radius: 50%;
-  border: 3px solid var(--accent3);
-  border-top-color: var(--accent);
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* SETTINGS */
-.settings-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  overflow: hidden;
-  margin-bottom: 16px;
-}
-.settings-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-}
-.settings-item:last-child { border-bottom: none; }
-.settings-item-left { display: flex; align-items: center; gap: 12px; }
-.settings-icon { font-size: 20px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg3); border-radius: 10px; }
-.settings-label { font-size: 14px; font-weight: 600; }
-.settings-sub { font-size: 11px; color: var(--text2); margin-top: 2px; }
-.settings-arrow { color: var(--text2); }
-
-/* TOGGLE */
-.toggle {
-  width: 44px; height: 24px;
-  background: var(--border);
-  border-radius: 12px;
-  position: relative;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.toggle.on { background: var(--accent); }
-.toggle::after {
-  content:'';
-  position:absolute;
-  width: 20px; height: 20px;
-  background: white;
-  border-radius: 50%;
-  top: 2px; left: 2px;
-  transition: transform 0.2s;
-}
-.toggle.on::after { transform: translateX(20px); }
-
-/* BRAND LOGOS */
-.brand-logo { font-size: 13px; font-weight: 700; }
-
-/* FAVORITE BTNS */
-.fav-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.btn-fav {
-  padding: 10px 4px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--bg3);
-  color: var(--text2);
-  font-size: 10px;
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.15s;
-}
-.btn-fav .fav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
-.btn-fav:active { border-color: var(--accent2); color: var(--accent2); }
-
-/* IP INFO */
-.ip-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(0,245,212,0.08);
-  border: 1px solid rgba(0,245,212,0.2);
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-size: 11px;
-  color: var(--accent);
-  margin-top: 8px;
-}
-
-.protocol-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: rgba(114,9,183,0.2);
-  color: #b48aff;
-  margin-left: 6px;
-}
+  /* ============ RESPONSIVE ============ */
+  @media (min-width:480px) {
+    body { display:flex; justify-content:center; }
+    #app { width:480px; height:100vh; position:relative; overflow:hidden; }
+    .bottomnav { position:absolute; }
+    .toast { position:absolute; }
+  }
 </style>
-<link rel="manifest" href="manifest.json">
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6c63ff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="UniMote">
+  <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
+<div id="app">
 
-<nav>
-  <div class="logo">UniMote</div>
-  <div style="display:flex;align-items:center;gap:8px">
-    <span class="status-dot" id="statusDot"></span>
-    <span class="status-text" id="statusText">Sem TV</span>
-  </div>
-</nav>
-
-<div class="tabs">
-  <div class="tab active" onclick="showPage('home')">
-    <span class="tab-icon">📺</span>Início
-  </div>
-  <div class="tab" onclick="showPage('remote')">
-    <span class="tab-icon">🎮</span>Remoto
-  </div>
-  <div class="tab" onclick="showPage('apps')">
-    <span class="tab-icon">📱</span>Apps
-  </div>
-  <div class="tab" onclick="showPage('settings')">
-    <span class="tab-icon">⚙️</span>Config
+<!-- SPLASH -->
+<div id="splash" class="screen active">
+  <div class="splash-logo">
+    <span class="icon">📺</span>
+    <div class="splash-title">UniMote</div>
+    <div class="splash-sub">Universal TV Remote</div>
+    <div class="splash-bar"><div class="splash-bar-fill"></div></div>
   </div>
 </div>
 
-<!-- HOME PAGE -->
-<div class="page active" id="page-home">
-  <div class="section-title">Dispositivos Salvos</div>
-  <div class="devices-grid" id="devicesGrid"></div>
+<!-- HOME -->
+<div id="home" class="screen">
+  <div class="topbar">
+    <span class="topbar-title">UniMote</span>
+    <span style="display:flex;align-items:center;font-size:12px;color:var(--text-muted)">
+      <span class="signal-dot"></span>Wi-Fi conectado
+    </span>
+    <button class="topbar-btn" onclick="showAdminLogin()">⚙️</button>
+  </div>
+  <div class="content">
+    <div class="hero-section">
+      <h2>Seus Dispositivos</h2>
+      <p>Gerencie e controle todas as suas TVs</p>
+    </div>
 
-  <button class="btn-scan" onclick="openAddModal()">
-    ➕ Adicionar TV
-  </button>
+    <div class="section-title">Dispositivos Salvos</div>
+    <div class="device-grid" id="deviceGrid">
+      <div class="device-card connected" onclick="goToRemote('Samsung QLED 65\"','Samsung','📺','wifi')">
+        <div class="glow-bg"></div>
+        <span class="dc-icon">📺</span>
+        <div class="dc-name">Samsung QLED</div>
+        <div class="dc-brand">Samsung • 65"</div>
+        <span class="dc-status">● Conectado</span>
+      </div>
+      <div class="device-card" onclick="goToRemote('LG OLED 55\"','LG','🖥️','ir')">
+        <div class="glow-bg"></div>
+        <span class="dc-icon">🖥️</span>
+        <div class="dc-name">LG OLED</div>
+        <div class="dc-brand">LG • 55"</div>
+        <span class="dc-status">○ Desconectado</span>
+      </div>
+    </div>
 
-  <div class="section-title" style="margin-top:24px">Escanear Rede</div>
-  <button class="btn-scan" style="background:linear-gradient(135deg,#1a1a2e,#2a2a4a);border:1px solid var(--border);color:var(--accent)" onclick="scanNetwork()">
-    📡 Buscar TVs Automaticamente
-  </button>
+    <button class="add-device-btn" onclick="openAddDevice()">
+      <span>➕</span> Adicionar Novo Dispositivo
+    </button>
 
-  <div id="scanResults"></div>
+    <div class="section-title">Marcas Suportadas</div>
+    <div class="brand-row">
+      <div class="brand-chip selected">Samsung</div>
+      <div class="brand-chip">LG</div>
+      <div class="brand-chip">Roku</div>
+      <div class="brand-chip">Sony</div>
+      <div class="brand-chip">TCL</div>
+      <div class="brand-chip">Hisense</div>
+      <div class="brand-chip">Vizio</div>
+      <div class="brand-chip">Fire TV</div>
+      <div class="brand-chip">Android TV</div>
+      <div class="brand-chip">Philips</div>
+    </div>
 
-  <div class="section-title" style="margin-top:24px">Marcas Suportadas</div>
-  <div class="brands-row">
-    <div class="brand-chip active">Todas</div>
-    <div class="brand-chip">Roku/TCL</div>
-    <div class="brand-chip">Samsung</div>
-    <div class="brand-chip">LG</div>
-    <div class="brand-chip">Sony</div>
-    <div class="brand-chip">Philips</div>
-    <div class="brand-chip">Hisense</div>
-    <div class="brand-chip">AOC</div>
-    <div class="brand-chip">Semp</div>
-    <div class="brand-chip">Panasonic</div>
+    <div class="section-title" style="margin-top:20px">Acesso Rápido</div>
+    <div class="shortcut-grid" style="margin-bottom:10px">
+      <div class="shortcut-card" onclick="showToast('🔍 Buscando TVs na rede...')">
+        <span class="sc-icon">🔍</span>
+        <div class="sc-name">Escanear Rede</div>
+        <div class="sc-desc">Encontrar TVs Wi-Fi</div>
+      </div>
+      <div class="shortcut-card" onclick="navigateTo('mirroring')">
+        <span class="sc-icon">📡</span>
+        <div class="sc-name">Espelhar Tela</div>
+        <div class="sc-desc">Screen Mirroring</div>
+      </div>
+    </div>
   </div>
 
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-top:8px">
-    <div style="font-size:13px;font-weight:600;margin-bottom:8px">📋 Como conectar</div>
-    <div style="font-size:12px;color:var(--text2);line-height:1.6">
-      1. Conecte o celular e a TV no <strong style="color:var(--accent)">mesmo Wi-Fi</strong><br>
-      2. Toque em "Buscar TVs" ou adicione manualmente<br>
-      3. Para Roku/TCL: habilite <strong style="color:var(--accent)">Controle por Rede</strong> nas configurações da TV<br>
-      4. Para Samsung: ative <strong style="color:var(--accent)">Mobile Device Manager</strong><br>
-      5. Para LG: ative <strong style="color:var(--accent)">LG Connect Apps</strong>
+  <div class="bottomnav">
+    <div class="nav-item active" onclick="navigateTo('home')">
+      <span class="nav-icon">🏠</span><span class="nav-label">Início</span>
+    </div>
+    <div class="nav-item" onclick="navigateTo('remote')">
+      <span class="nav-icon">📱</span><span class="nav-label">Remoto</span>
+    </div>
+    <div class="nav-item" onclick="navigateTo('control')">
+      <span class="nav-icon">🎮</span><span class="nav-label">Controle</span>
+    </div>
+    <div class="nav-item" onclick="navigateTo('mirroring')">
+      <span class="nav-icon">📡</span><span class="nav-label">Mirror</span>
+    </div>
+    <div class="nav-item" onclick="navigateTo('settings')">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Ajustes</span>
     </div>
   </div>
 </div>
 
-<!-- REMOTE PAGE -->
-<div class="page" id="page-remote">
-  <div id="noTvMsg" class="no-tv-msg">
-    <div class="big-icon">📺</div>
-    <div style="font-size:16px;font-weight:600;margin-bottom:8px">Nenhuma TV selecionada</div>
-    <div style="font-size:13px;color:var(--text2)">Vá em Início e selecione ou adicione uma TV</div>
+<!-- REMOTE -->
+<div id="remote" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="navigateTo('home')">←</button>
+    <span class="topbar-title" id="remoteTitle">Controle</span>
+    <button class="topbar-btn" onclick="openDeviceSwitch()">🔄</button>
   </div>
+  <div class="content">
+    <div class="remote-wrap">
 
-  <div id="remoteControl" style="display:none">
-    <div style="text-align:center;margin-bottom:16px">
-      <div style="font-size:14px;font-weight:600" id="selectedTvName">TV</div>
-      <div class="ip-badge" id="selectedTvIp">📡 0.0.0.0</div>
-      <span class="protocol-badge" id="selectedTvProtocol">ROKU</span>
-    </div>
-
-    <div class="remote">
-      <!-- POWER ROW -->
-      <div class="power-row">
-        <button class="btn-power" onclick="sendCmd('power')" title="Power">⏻</button>
-        <button class="btn-input" onclick="sendCmd('input')">📥 Entrada</button>
-        <button class="btn-mute" onclick="sendCmd('mute')">🔇</button>
+      <div class="remote-device-info">
+        <span class="rdi-icon" id="remoteIcon">📺</span>
+        <div class="rdi-text">
+          <div class="rdi-name" id="remoteDeviceName">Samsung QLED 65"</div>
+          <div class="rdi-brand" id="remoteDeviceBrand">Samsung • Wi-Fi</div>
+        </div>
+        <div class="rdi-conn" id="remoteConnStatus">
+          <span class="signal-dot"></span> Conectado
+        </div>
       </div>
 
-      <!-- FAVORITES -->
-      <div class="fav-row">
-        <button class="btn-fav" onclick="sendCmd('home')"><span class="fav-icon">🏠</span>Home</button>
-        <button class="btn-fav" onclick="sendCmd('back')"><span class="fav-icon">↩️</span>Voltar</button>
-        <button class="btn-fav" onclick="sendCmd('guide')"><span class="fav-icon">📋</span>Guia</button>
-        <button class="btn-fav" onclick="sendCmd('info')"><span class="fav-icon">ℹ️</span>Info</button>
+      <!-- TOP BUTTONS -->
+      <div class="btn-row">
+        <button class="btn-top btn-power" onclick="tvCmd('power')">⏻ POWER</button>
+        <button class="btn-top" onclick="tvCmd('guide')">📋 GUIDE</button>
+        <button class="btn-top" onclick="tvCmd('hdmi')">🔌 HDMI</button>
+        <button class="btn-top" onclick="tvCmd('home')">🏠 HOME</button>
       </div>
 
-      <!-- D-PAD -->
-      <div class="dpad">
-        <div class="dpad-empty"></div>
-        <button class="dpad-btn" onclick="sendCmd('up')">▲</button>
-        <div class="dpad-empty"></div>
-        <button class="dpad-btn" onclick="sendCmd('left')">◀</button>
-        <button class="dpad-btn dpad-center" onclick="sendCmd('select')">OK</button>
-        <button class="dpad-btn" onclick="sendCmd('right')">▶</button>
-        <div class="dpad-empty"></div>
-        <button class="dpad-btn" onclick="sendCmd('down')">▼</button>
-        <div class="dpad-empty"></div>
+      <!-- SIDE BTNS + DPAD -->
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="side-btn" onclick="tvCmd('tools')" title="Tools">🔧</button>
+          <button class="side-btn" onclick="tvCmd('back')" title="Back">↩️</button>
+        </div>
+        <div class="dpad-section" style="flex:1">
+          <div class="dpad-ring"></div>
+          <button class="dpad-btn dpad-up"    onclick="tvCmd('up')">▲</button>
+          <button class="dpad-btn dpad-down"  onclick="tvCmd('down')">▼</button>
+          <button class="dpad-btn dpad-left"  onclick="tvCmd('left')">◀</button>
+          <button class="dpad-btn dpad-right" onclick="tvCmd('right')">▶</button>
+          <button class="dpad-ok"             onclick="tvCmd('ok')">OK</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button class="side-btn" onclick="tvCmd('info')" title="Info">ℹ️</button>
+          <button class="side-btn" onclick="tvCmd('exit')" title="Exit">✖️</button>
+        </div>
       </div>
 
-      <!-- VOL / CANAL -->
-      <div class="vol-ch-row">
-        <div class="vol-ch-group">
-          <div class="group-label">🔊 Volume</div>
-          <div class="plus-minus">
-            <button class="btn-pm" onclick="sendCmd('vol_up')">+</button>
-            <button class="btn-pm" onclick="sendCmd('vol_down')">−</button>
+      <!-- MENU ROW -->
+      <div class="btn-row" style="margin-bottom:12px">
+        <button class="btn-top" onclick="tvCmd('menu')">📋 MENU</button>
+        <button class="btn-top" onclick="tvCmd('settings_tv')">⚙️ SET</button>
+        <button class="btn-top" onclick="tvCmd('search_tv')">🔍 SEARCH</button>
+      </div>
+
+      <!-- VOL / MUTE / CH -->
+      <div class="vol-ch-section">
+        <div class="slider-group">
+          <div class="slider-label">VOL</div>
+          <div class="slider-btns">
+            <button class="slider-btn" onclick="tvCmd('vol_up')">＋</button>
+            <button class="slider-btn" onclick="tvCmd('vol_down')">－</button>
           </div>
         </div>
-        <div class="vol-ch-group">
-          <div class="group-label">📺 Canal</div>
-          <div class="plus-minus">
-            <button class="btn-pm" onclick="sendCmd('ch_up')">+</button>
-            <button class="btn-pm" onclick="sendCmd('ch_down')">−</button>
+        <div class="mute-center">
+          <button class="mute-btn" onclick="tvCmd('mute')">🔇</button>
+          <button class="source-btn" onclick="tvCmd('source')">📥</button>
+        </div>
+        <div class="slider-group">
+          <div class="slider-label">CH</div>
+          <div class="slider-btns">
+            <button class="slider-btn" onclick="tvCmd('ch_up')">＋</button>
+            <button class="slider-btn" onclick="tvCmd('ch_down')">－</button>
           </div>
         </div>
+      </div>
+
+      <!-- NUMBER PAD -->
+      <div class="numpad">
+        <button class="num-btn" onclick="tvCmd('num1')">1</button>
+        <button class="num-btn" onclick="tvCmd('num2')">2<span class="sub">ABC</span></button>
+        <button class="num-btn" onclick="tvCmd('num3')">3<span class="sub">DEF</span></button>
+        <button class="num-btn" onclick="tvCmd('num4')">4<span class="sub">GHU</span></button>
+        <button class="num-btn" onclick="tvCmd('num5')">5<span class="sub">JKL</span></button>
+        <button class="num-btn" onclick="tvCmd('num6')">6<span class="sub">MNO</span></button>
+        <button class="num-btn" onclick="tvCmd('num7')">7<span class="sub">PQRS</span></button>
+        <button class="num-btn" onclick="tvCmd('num8')">8<span class="sub">TUV</span></button>
+        <button class="num-btn" onclick="tvCmd('num9')">9<span class="sub">WXYZ</span></button>
+        <button class="num-btn" onclick="tvCmd('ttx')">TTX</button>
+        <button class="num-btn" onclick="tvCmd('num0')">0</button>
+        <button class="num-btn" onclick="tvCmd('prech')">PRE-CH</button>
       </div>
 
       <!-- MEDIA -->
       <div class="media-row">
-        <button class="btn-media" onclick="sendCmd('rew')">⏮</button>
-        <button class="btn-media" onclick="sendCmd('play')">⏯</button>
-        <button class="btn-media" onclick="sendCmd('pause')">⏸</button>
-        <button class="btn-media" onclick="sendCmd('fwd')">⏭</button>
+        <button class="media-btn" onclick="tvCmd('rew')">⏮</button>
+        <button class="media-btn" onclick="tvCmd('stop')">⏹</button>
+        <button class="media-btn" onclick="tvCmd('play')">▶️</button>
+        <button class="media-btn" onclick="tvCmd('fwd')">⏭</button>
       </div>
 
-      <!-- NUMPAD -->
-      <div class="numpad">
-        <button class="btn-num" onclick="sendCmd('key_1')">1</button>
-        <button class="btn-num" onclick="sendCmd('key_2')">2</button>
-        <button class="btn-num" onclick="sendCmd('key_3')">3</button>
-        <button class="btn-num" onclick="sendCmd('key_4')">4</button>
-        <button class="btn-num" onclick="sendCmd('key_5')">5</button>
-        <button class="btn-num" onclick="sendCmd('key_6')">6</button>
-        <button class="btn-num" onclick="sendCmd('key_7')">7</button>
-        <button class="btn-num" onclick="sendCmd('key_8')">8</button>
-        <button class="btn-num" onclick="sendCmd('key_9')">9</button>
-        <button class="btn-num" onclick="sendCmd('star')">✱</button>
-        <button class="btn-num" onclick="sendCmd('key_0')">0</button>
-        <button class="btn-num" onclick="sendCmd('hash')">#</button>
+      <!-- COLOR BUTTONS -->
+      <div class="color-row">
+        <button class="color-btn cb-a" onclick="tvCmd('colorA')">A</button>
+        <button class="color-btn cb-b" onclick="tvCmd('colorB')">B</button>
+        <button class="color-btn cb-c" onclick="tvCmd('colorC')">C</button>
+        <button class="color-btn cb-d" onclick="tvCmd('colorD')">D</button>
       </div>
+
+    </div>
+  </div>
+  <div class="bottomnav">
+    <div class="nav-item" onclick="navigateTo('home')">
+      <span class="nav-icon">🏠</span><span class="nav-label">Início</span>
+    </div>
+    <div class="nav-item active" onclick="navigateTo('remote')">
+      <span class="nav-icon">📱</span><span class="nav-label">Remoto</span>
+    </div>
+    <div class="nav-item" onclick="navigateTo('control')">
+      <span class="nav-icon">🎮</span><span class="nav-label">Controle</span>
+    </div>
+    <div class="nav-item" onclick="navigateTo('mirroring')">
+      <span class="nav-icon">📡</span><span class="nav-label">Mirror</span>
+    </div>
+    <div class="nav-item" onclick="navigateTo('settings')">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Ajustes</span>
     </div>
   </div>
 </div>
 
-<!-- APPS PAGE -->
-<div class="page" id="page-apps">
-  <div class="section-title">Streaming</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px" id="appsGrid"></div>
-
-  <div class="section-title">Canais Abertos</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px" id="channelsGrid"></div>
-</div>
-
-<!-- SETTINGS PAGE -->
-<div class="page" id="page-settings">
-  <div class="section-title">Configurações</div>
-
-  <div class="settings-card">
-    <div class="settings-item" onclick="toggleVibrate()">
-      <div class="settings-item-left">
-        <div class="settings-icon">📳</div>
-        <div>
-          <div class="settings-label">Vibração</div>
-          <div class="settings-sub">Vibrar ao pressionar botões</div>
-        </div>
-      </div>
-      <div class="toggle on" id="toggleVibrate"></div>
+<!-- CONTROL -->
+<div id="control" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="navigateTo('home')">←</button>
+    <span class="topbar-title">Controle</span>
+    <button class="topbar-btn">📋</button>
+  </div>
+  <div class="content">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this,'shortcuts')">Atalhos</button>
+      <button class="tab-btn" onclick="switchTab(this,'apps')">Apps</button>
+      <button class="tab-btn" onclick="switchTab(this,'macros')">Macros</button>
     </div>
-    <div class="settings-item" onclick="toggleSound()">
-      <div class="settings-item-left">
-        <div class="settings-icon">🔔</div>
-        <div>
-          <div class="settings-label">Som dos botões</div>
-          <div class="settings-sub">Bip ao pressionar</div>
+
+    <div id="tab-shortcuts">
+      <div class="shortcut-grid">
+        <div class="shortcut-card" onclick="tvCmd('netflix')">
+          <span class="sc-icon">🎬</span>
+          <div class="sc-name">Netflix</div><div class="sc-desc">Abrir app</div>
+        </div>
+        <div class="shortcut-card" onclick="tvCmd('youtube')">
+          <span class="sc-icon">▶️</span>
+          <div class="sc-name">YouTube</div><div class="sc-desc">Abrir app</div>
+        </div>
+        <div class="shortcut-card" onclick="tvCmd('prime')">
+          <span class="sc-icon">📦</span>
+          <div class="sc-name">Prime Video</div><div class="sc-desc">Abrir app</div>
+        </div>
+        <div class="shortcut-card" onclick="tvCmd('disney')">
+          <span class="sc-icon">🏰</span>
+          <div class="sc-name">Disney+</div><div class="sc-desc">Abrir app</div>
+        </div>
+        <div class="shortcut-card" onclick="tvCmd('sleep_timer')">
+          <span class="sc-icon">💤</span>
+          <div class="sc-name">Sleep Timer</div><div class="sc-desc">Desligar em 30min</div>
+        </div>
+        <div class="shortcut-card" onclick="tvCmd('picture_mode')">
+          <span class="sc-icon">🎨</span>
+          <div class="sc-name">Modo Imagem</div><div class="sc-desc">Cinema/Esporte</div>
         </div>
       </div>
-      <div class="toggle" id="toggleSound"></div>
+    </div>
+
+    <div id="tab-apps" style="display:none">
+      <div class="section-title">Aplicativos da TV</div>
+      <div class="app-grid">
+        <div class="app-icon-btn" onclick="tvCmd('netflix')"><span class="app-emoji">🎬</span><span class="app-name">Netflix</span></div>
+        <div class="app-icon-btn" onclick="tvCmd('youtube')"><span class="app-emoji">▶️</span><span class="app-name">YouTube</span></div>
+        <div class="app-icon-btn" onclick="tvCmd('spotify')"><span class="app-emoji">🎵</span><span class="app-name">Spotify</span></div>
+        <div class="app-icon-btn" onclick="tvCmd('prime')"><span class="app-emoji">📦</span><span class="app-name">Prime</span></div>
+        <div class="app-icon-btn" onclick="tvCmd('hbo')"><span class="app-emoji">🎭</span><span class="app-name">HBO Max</span></div>
+        <div class="app-icon-btn" onclick="tvCmd('disney')"><span class="app-emoji">🏰</span><span class="app-name">Disney+</span></div>
+        <div class="app-icon-btn" onclick="tvCmd('twitch')"><span class="app-emoji">🎮</span><span class="app-name">Twitch</span></div>
+        <div class="app-icon-btn" onclick="tvCmd('browser')"><span class="app-emoji">🌐</span><span class="app-name">Browser</span></div>
+      </div>
+    </div>
+
+    <div id="tab-macros" style="display:none">
+      <div class="section-title">Macros Automatizados</div>
+      <div class="admin-item" onclick="runMacro('cinema')">
+        <span class="ai-icon">🍿</span>
+        <div class="ai-text"><div class="ai-title">Modo Cinema</div><div class="ai-sub">Dim, Sound Surround, Netflix</div></div>
+        <span class="badge badge-blue">AUTO</span>
+      </div>
+      <div class="admin-item" onclick="runMacro('gaming')">
+        <span class="ai-icon">🎮</span>
+        <div class="ai-text"><div class="ai-title">Modo Gaming</div><div class="ai-sub">Game Mode, Low Latency</div></div>
+        <span class="badge badge-green">AUTO</span>
+      </div>
+      <div class="admin-item" onclick="runMacro('morning')">
+        <span class="ai-icon">☀️</span>
+        <div class="ai-text"><div class="ai-title">Rotina Manhã</div><div class="ai-sub">Ligar, Notícias, Vol 20</div></div>
+        <span class="badge badge-blue">AUTO</span>
+      </div>
+      <button class="add-device-btn" style="margin-top:10px" onclick="showToast('✅ Em breve: criar macros customizados')">
+        <span>➕</span> Criar Nova Macro
+      </button>
     </div>
   </div>
-
-  <div class="section-title">Sobre</div>
-  <div class="settings-card">
-    <div class="settings-item">
-      <div class="settings-item-left">
-        <div class="settings-icon">📱</div>
-        <div>
-          <div class="settings-label">UniMote</div>
-          <div class="settings-sub">Versão 2.0 — Controle Universal</div>
-        </div>
-      </div>
-    </div>
-    <div class="settings-item">
-      <div class="settings-item-left">
-        <div class="settings-icon">📡</div>
-        <div>
-          <div class="settings-label">Protocolos</div>
-          <div class="settings-sub">Roku ECP · Samsung WS · LG WebOS · Sony Bravia</div>
-        </div>
-      </div>
-    </div>
-    <div class="settings-item" onclick="clearDevices()">
-      <div class="settings-item-left">
-        <div class="settings-icon">🗑️</div>
-        <div>
-          <div class="settings-label" style="color:var(--danger)">Apagar todas as TVs</div>
-          <div class="settings-sub">Remove todos os dispositivos salvos</div>
-        </div>
-      </div>
-      <div class="settings-arrow">›</div>
-    </div>
+  <div class="bottomnav">
+    <div class="nav-item" onclick="navigateTo('home')"><span class="nav-icon">🏠</span><span class="nav-label">Início</span></div>
+    <div class="nav-item" onclick="navigateTo('remote')"><span class="nav-icon">📱</span><span class="nav-label">Remoto</span></div>
+    <div class="nav-item active" onclick="navigateTo('control')"><span class="nav-icon">🎮</span><span class="nav-label">Controle</span></div>
+    <div class="nav-item" onclick="navigateTo('mirroring')"><span class="nav-icon">📡</span><span class="nav-label">Mirror</span></div>
+    <div class="nav-item" onclick="navigateTo('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Ajustes</span></div>
   </div>
 </div>
 
-<!-- ADD DEVICE MODAL -->
-<div class="modal-overlay" id="addModal">
-  <div class="modal">
-    <div class="modal-title">➕ Adicionar TV</div>
-
-    <div class="form-group">
-      <label class="form-label">Nome da TV</label>
-      <input class="form-input" id="tvName" placeholder="Ex: TV da Sala" />
+<!-- MIRRORING -->
+<div id="mirroring" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="navigateTo('home')">←</button>
+    <span class="topbar-title">Espelhamento</span>
+    <button class="topbar-btn">ℹ️</button>
+  </div>
+  <div class="content">
+    <div class="mirror-hero">
+      <span class="mh-icon">📡</span>
+      <h3>Screen Mirroring</h3>
+      <p>Espelhe a tela do seu smartphone na TV via Wi-Fi. Compartilhe fotos, vídeos e muito mais.</p>
+      <button class="btn-primary" onclick="startMirroring()">🚀 Iniciar Espelhamento</button>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Marca / Protocolo</label>
-      <select class="form-select" id="tvBrand" onchange="onBrandChange()">
-        <option value="roku">📺 Roku / TCL Roku</option>
-        <option value="samsung">📺 Samsung Smart TV</option>
-        <option value="lg">📺 LG WebOS</option>
-        <option value="sony">📺 Sony Bravia</option>
-        <option value="philips">📺 Philips Android TV</option>
-        <option value="hisense">📺 Hisense</option>
-        <option value="aoc">📺 AOC</option>
-        <option value="semp">📺 Semp / Toshiba</option>
-        <option value="panasonic">📺 Panasonic</option>
-        <option value="generic">📺 Outra (Genérico)</option>
+    <div class="section-title">Opções de Compartilhamento</div>
+    <div class="mirror-options">
+      <div class="mirror-opt" onclick="showToast('📺 Screencast iniciado')">
+        <span class="mo-icon">🎬</span>
+        <div class="mo-title">Screencast</div>
+        <div class="mo-sub">Transmitir vídeos</div>
+      </div>
+      <div class="mirror-opt" onclick="showToast('📸 Galeria aberta')">
+        <span class="mo-icon">📸</span>
+        <div class="mo-title">Fotos</div>
+        <div class="mo-sub">Ver na TV grande</div>
+      </div>
+      <div class="mirror-opt" onclick="showToast('🎵 Áudio conectado')">
+        <span class="mo-icon">🎵</span>
+        <div class="mo-title">Áudio</div>
+        <div class="mo-sub">Streaming de som</div>
+      </div>
+      <div class="mirror-opt" onclick="showToast('🌐 Browser espelhado')">
+        <span class="mo-icon">🌐</span>
+        <div class="mo-title">Browser</div>
+        <div class="mo-sub">Navegar na TV</div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:16px">Dispositivos Encontrados</div>
+    <div class="admin-item">
+      <span class="ai-icon">📺</span>
+      <div class="ai-text"><div class="ai-title">Samsung QLED 65"</div><div class="ai-sub">192.168.1.105 • Wi-Fi Direct</div></div>
+      <button class="btn-sm btn-sm-edit" onclick="showToast('📺 Conectando...')">Conectar</button>
+    </div>
+    <div class="admin-item">
+      <span class="ai-icon">🖥️</span>
+      <div class="ai-text"><div class="ai-title">LG OLED 55"</div><div class="ai-sub">192.168.1.108 • Miracast</div></div>
+      <button class="btn-sm btn-sm-edit" onclick="showToast('🖥️ Conectando...')">Conectar</button>
+    </div>
+  </div>
+  <div class="bottomnav">
+    <div class="nav-item" onclick="navigateTo('home')"><span class="nav-icon">🏠</span><span class="nav-label">Início</span></div>
+    <div class="nav-item" onclick="navigateTo('remote')"><span class="nav-icon">📱</span><span class="nav-label">Remoto</span></div>
+    <div class="nav-item" onclick="navigateTo('control')"><span class="nav-icon">🎮</span><span class="nav-label">Controle</span></div>
+    <div class="nav-item active" onclick="navigateTo('mirroring')"><span class="nav-icon">📡</span><span class="nav-label">Mirror</span></div>
+    <div class="nav-item" onclick="navigateTo('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Ajustes</span></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="screen">
+  <div class="topbar">
+    <button class="topbar-btn" onclick="navigateTo('home')">←</button>
+    <span class="topbar-title">Configurações</span>
+    <button class="topbar-btn" onclick="showAdminLogin()">🔐</button>
+  </div>
+  <div class="content">
+    <div class="settings-section">
+      <div class="section-title">Conexão</div>
+      <div class="settings-group">
+        <div class="setting-item" onclick="showToast('🔍 Escaneando rede Wi-Fi...')">
+          <span class="si-icon">📶</span>
+          <div class="si-text"><div class="si-title">Escanear Wi-Fi</div><div class="si-sub">Encontrar Smart TVs</div></div>
+          <span class="si-arrow">›</span>
+        </div>
+        <div class="setting-item" onclick="showToast('📡 Modo IR Blaster: disponível')">
+          <span class="si-icon">📡</span>
+          <div class="si-text"><div class="si-title">IR Blaster</div><div class="si-sub">Controle por infravermelho</div></div>
+          <div class="toggle on" onclick="event.stopPropagation();this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-item">
+          <span class="si-icon">🔗</span>
+          <div class="si-text"><div class="si-title">Auto-reconectar</div><div class="si-sub">Reconectar ao abrir app</div></div>
+          <div class="toggle on" onclick="event.stopPropagation();this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">Aparência</div>
+      <div class="settings-group">
+        <div class="setting-item" onclick="showToast('🎨 Tema alterado')">
+          <span class="si-icon">🎨</span>
+          <div class="si-text"><div class="si-title">Tema</div><div class="si-sub">Escuro (atual)</div></div>
+          <span class="si-arrow">›</span>
+        </div>
+        <div class="setting-item">
+          <span class="si-icon">📳</span>
+          <div class="si-text"><div class="si-title">Vibração</div><div class="si-sub">Feedback háptico</div></div>
+          <div class="toggle on" onclick="event.stopPropagation();this.classList.toggle('on')"></div>
+        </div>
+        <div class="setting-item">
+          <span class="si-icon">🔊</span>
+          <div class="si-text"><div class="si-title">Sons</div><div class="si-sub">Beep nos botões</div></div>
+          <div class="toggle" onclick="event.stopPropagation();this.classList.toggle('on')"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="section-title">Conta & App</div>
+      <div class="settings-group">
+        <div class="setting-item" onclick="showAdminLogin()">
+          <span class="si-icon">🔐</span>
+          <div class="si-text"><div class="si-title">Painel Admin</div><div class="si-sub">Gerenciar dispositivos e usuários</div></div>
+          <span class="si-arrow">›</span>
+        </div>
+        <div class="setting-item" onclick="showToast('📋 v2.5.0 — Build 2025')">
+          <span class="si-icon">ℹ️</span>
+          <div class="si-text"><div class="si-title">Sobre o App</div><div class="si-sub">UniMote v2.5.0</div></div>
+          <span class="si-arrow">›</span>
+        </div>
+        <div class="setting-item" onclick="showToast('⭐ Obrigado pela avaliação!')">
+          <span class="si-icon">⭐</span>
+          <div class="si-text"><div class="si-title">Avaliar App</div><div class="si-sub">Deixe sua nota na Play Store</div></div>
+          <span class="si-arrow">›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="bottomnav">
+    <div class="nav-item" onclick="navigateTo('home')"><span class="nav-icon">🏠</span><span class="nav-label">Início</span></div>
+    <div class="nav-item" onclick="navigateTo('remote')"><span class="nav-icon">📱</span><span class="nav-label">Remoto</span></div>
+    <div class="nav-item" onclick="navigateTo('control')"><span class="nav-icon">🎮</span><span class="nav-label">Controle</span></div>
+    <div class="nav-item" onclick="navigateTo('mirroring')"><span class="nav-icon">📡</span><span class="nav-label">Mirror</span></div>
+    <div class="nav-item active" onclick="navigateTo('settings')"><span class="nav-icon">⚙️</span><span class="nav-label">Ajustes</span></div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="adminLogin" class="screen">
+  <div class="admin-box">
+    <span class="ab-icon">🔐</span>
+    <h2>Admin Panel</h2>
+    <p>Acesso restrito ao administrador do sistema</p>
+    <div class="input-group">
+      <label>Usuário</label>
+      <input type="text" id="adminUser" placeholder="Login de administrador">
+    </div>
+    <div class="input-group">
+      <label>Senha</label>
+      <input type="password" id="adminPass" placeholder="••••••••">
+    </div>
+    <div class="login-error" id="loginError">⚠️ Usuário ou senha incorretos</div>
+    <button class="btn-primary" onclick="doAdminLogin()">🔓 Entrar</button>
+    <button onclick="navigateTo('settings')" style="background:none;border:none;color:var(--text-muted);margin-top:14px;width:100%;font-size:13px;cursor:pointer;">← Voltar</button>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="screen">
+  <div class="admin-topbar">
+    <span class="admin-topbar-icon">🛡️</span>
+    <div>
+      <div class="admin-topbar-title">Admin Panel</div>
+      <div style="font-size:11px;color:var(--text-muted)">UniMote Dashboard</div>
+    </div>
+    <button class="admin-logout" onclick="adminLogout()">Sair</button>
+  </div>
+  <div class="content" style="padding-bottom:20px">
+
+    <div class="section-title" style="margin-top:4px">Estatísticas</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="sv" id="statDevices">2</div><div class="sl">Dispositivos</div></div>
+      <div class="stat-card"><div class="sv" id="statCmds">147</div><div class="sl">Comandos</div></div>
+      <div class="stat-card"><div class="sv">3</div><div class="sl">Macros</div></div>
+      <div class="stat-card"><div class="sv">ON</div><div class="sl">Status</div></div>
+    </div>
+
+    <div class="admin-section">
+      <h3>Gerenciar Dispositivos</h3>
+      <div class="device-list-admin" id="adminDeviceList">
+        <div class="dla-item">
+          <span class="dla-icon">📺</span>
+          <div class="dla-info"><div class="dla-name">Samsung QLED 65"</div><div class="dla-brand">Wi-Fi • 192.168.1.105</div></div>
+          <div class="dla-actions">
+            <button class="btn-sm btn-sm-edit" onclick="showToast('✏️ Editando...')">✏️</button>
+            <button class="btn-sm btn-sm-del" onclick="removeDevice(this)">🗑️</button>
+          </div>
+        </div>
+        <div class="dla-item">
+          <span class="dla-icon">🖥️</span>
+          <div class="dla-info"><div class="dla-name">LG OLED 55"</div><div class="dla-brand">IR Blaster • Offline</div></div>
+          <div class="dla-actions">
+            <button class="btn-sm btn-sm-edit" onclick="showToast('✏️ Editando...')">✏️</button>
+            <button class="btn-sm btn-sm-del" onclick="removeDevice(this)">🗑️</button>
+          </div>
+        </div>
+      </div>
+      <button class="add-device-btn" style="margin-top:10px" onclick="openAddDevice()">
+        <span>➕</span> Adicionar Dispositivo
+      </button>
+    </div>
+
+    <div class="admin-section">
+      <h3>Configurações do Sistema</h3>
+      <div class="admin-item" onclick="showToast('🔔 Notificações configuradas')">
+        <span class="ai-icon">🔔</span>
+        <div class="ai-text"><div class="ai-title">Notificações</div><div class="ai-sub">Push e alertas do app</div></div>
+        <span class="badge badge-green">Ativo</span>
+      </div>
+      <div class="admin-item" onclick="showToast('📊 Relatório gerado')">
+        <span class="ai-icon">📊</span>
+        <div class="ai-text"><div class="ai-title">Relatórios</div><div class="ai-sub">Logs de uso e comandos</div></div>
+        <span class="badge badge-blue">Ver</span>
+      </div>
+      <div class="admin-item" onclick="showToast('🔑 Senha alterada com sucesso')">
+        <span class="ai-icon">🔑</span>
+        <div class="ai-text"><div class="ai-title">Alterar Senha Admin</div><div class="ai-sub">Segurança da conta</div></div>
+        <span class="si-arrow">›</span>
+      </div>
+      <div class="admin-item" onclick="showToast('☁️ Backup realizado!')">
+        <span class="ai-icon">☁️</span>
+        <div class="ai-text"><div class="ai-title">Backup & Restaurar</div><div class="ai-sub">Salvar configurações</div></div>
+        <span class="badge badge-green">Sync</span>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>Monetização (Play Store)</h3>
+      <div class="admin-item" onclick="showToast('💰 Anúncios: configurar AdMob')">
+        <span class="ai-icon">💰</span>
+        <div class="ai-text"><div class="ai-title">Google AdMob</div><div class="ai-sub">Gerenciar anúncios</div></div>
+        <span class="badge badge-red">Config</span>
+      </div>
+      <div class="admin-item" onclick="showToast('👑 Premium: 23 assinantes')">
+        <span class="ai-icon">👑</span>
+        <div class="ai-text"><div class="ai-title">Assinaturas Premium</div><div class="ai-sub">In-App Purchases</div></div>
+        <span class="badge badge-blue">23</span>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>Publicação Play Store</h3>
+      <div class="admin-item" onclick="showToast('📦 Exportando APK...')">
+        <span class="ai-icon">📦</span>
+        <div class="ai-text"><div class="ai-title">Gerar APK / AAB</div><div class="ai-sub">Build para publicação</div></div>
+        <span class="badge badge-blue">Build</span>
+      </div>
+      <div class="admin-item" onclick="showToast('✅ Checklist Play Store aberto')">
+        <span class="ai-icon">✅</span>
+        <div class="ai-text"><div class="ai-title">Checklist Play Store</div><div class="ai-sub">Requisitos para publicar</div></div>
+        <span class="si-arrow">›</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: Adicionar Dispositivo -->
+<div class="modal-overlay" id="addDeviceModal" onclick="closeModal('addDeviceModal')">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">➕ Adicionar Dispositivo</div>
+
+    <div class="scan-container" id="scanContainer">
+      <div class="scan-ring">📺</div>
+      <p style="color:var(--text-muted);font-size:13px">Buscando TVs na rede...</p>
+    </div>
+
+    <div class="section-title">Ou adicionar manualmente</div>
+    <div class="input-group">
+      <label>Nome do Dispositivo</label>
+      <input type="text" id="newDeviceName" placeholder="Ex: TV da Sala">
+    </div>
+    <div class="input-group">
+      <label>Marca</label>
+      <select id="newDeviceBrand" style="width:100%;padding:12px;background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Exo 2',sans-serif;font-size:14px;outline:none">
+        <option>Samsung</option>
+        <option>LG</option>
+        <option>Sony</option>
+        <option>TCL</option>
+        <option>Roku</option>
+        <option>Hisense</option>
+        <option>Vizio</option>
+        <option>Fire TV</option>
+        <option>Android TV</option>
+        <option>Philips</option>
+        <option>Outra</option>
       </select>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">Endereço IP da TV</label>
-      <input class="form-input" id="tvIP" placeholder="Ex: 192.168.1.100" />
-      <div style="font-size:11px;color:var(--text2);margin-top:6px">
-        💡 Veja nas configurações da TV em: Rede → Status da Rede → IP
-      </div>
+    <div class="input-group">
+      <label>Tipo de Conexão</label>
+      <select id="newDeviceConn" style="width:100%;padding:12px;background:var(--bg-card2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Exo 2',sans-serif;font-size:14px;outline:none">
+        <option value="wifi">Wi-Fi (Smart TV)</option>
+        <option value="ir">IR Blaster (TV comum)</option>
+      </select>
     </div>
-
-    <div id="portHint" style="background:rgba(0,245,212,0.05);border:1px solid rgba(0,245,212,0.15);border-radius:10px;padding:10px;font-size:12px;color:var(--text2);margin-bottom:16px"></div>
-
-    <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-      <button class="btn-confirm" onclick="addDevice()">Salvar TV</button>
-    </div>
+    <button class="btn-primary" onclick="addNewDevice()">✅ Adicionar Dispositivo</button>
   </div>
 </div>
 
@@ -910,392 +1102,213 @@ nav {
 <div class="toast" id="toast"></div>
 
 <script>
-// ─── STATE ──────────────────────────────────────────────
-let devices = JSON.parse(localStorage.getItem('unimote_devices') || '[]');
-let selectedDevice = null;
-let vibrateOn = localStorage.getItem('vibrate') !== 'false';
-let soundOn = localStorage.getItem('sound') === 'true';
+// ============ STATE ============
+let currentScreen = 'splash';
+let adminLoggedIn = false;
+let cmdCount = 147;
+let devices = [
+  { name: 'Samsung QLED 65"', brand: 'Samsung', icon: '📺', conn: 'wifi', connected: true },
+  { name: 'LG OLED 55"', brand: 'LG', icon: '🖥️', conn: 'ir', connected: false }
+];
+let activeDevice = devices[0];
 
-// ─── BRAND PROTOCOLS ────────────────────────────────────
-const BRANDS = {
-  roku:     { port: 8060, protocol: 'ROKU ECP',    hint: 'Porta 8060 (Roku External Control Protocol). Ative "Controle por Rede" em Configurações > Sistema > Controle Remoto Avançado.' },
-  samsung:  { port: 8001, protocol: 'SAMSUNG WS',  hint: 'Porta 8001 (WebSocket). Ative "Mobile Device Manager" em Configurações > Geral > Gerenciador de Dispositivos Móveis.' },
-  lg:       { port: 3000, protocol: 'LG WEBOS',    hint: 'Porta 3000 (WebOS). Ative "LG Connect Apps" nas configurações da TV.' },
-  sony:     { port: 80,   protocol: 'SONY BRAVIA', hint: 'Porta 80 (Bravia IP Control). Ative em Configurações > Rede > Configuração IP > Controle Remoto IP.' },
-  philips:  { port: 1925, protocol: 'PHILIPS JOINTSPACE', hint: 'Porta 1925 (JointSpace API). Funciona em TVs Philips Android TV.' },
-  hisense:  { port: 36669,protocol: 'HISENSE',     hint: 'Porta 36669. Conecte na mesma rede Wi-Fi.' },
-  aoc:      { port: 8080, protocol: 'ANDROID TV',  hint: 'Porta 8080 (Android TV). Ative o ADB na TV.' },
-  semp:     { port: 8080, protocol: 'SEMP',        hint: 'Porta 8080. TVs Semp com Android TV.' },
-  panasonic:{ port: 55000,protocol: 'PANASONIC',   hint: 'Porta 55000. Ative "Viera Remote" nas configurações.' },
-  generic:  { port: 8080, protocol: 'GENÉRICO',    hint: 'Configure manualmente o IP e porta da sua TV.' },
-};
+// ============ SPLASH ============
+setTimeout(() => { navigateTo('home'); }, 2500);
 
-const BRAND_ICONS = {
-  roku:'📺', samsung:'🔵', lg:'🟣', sony:'⬛', philips:'🟡',
-  hisense:'🔴', aoc:'🟠', semp:'⚪', panasonic:'🟢', generic:'📺'
-};
-
-// ─── ROKU COMMANDS ──────────────────────────────────────
-const ROKU_CMDS = {
-  power:    'keypress/Power',
-  home:     'keypress/Home',
-  back:     'keypress/Back',
-  up:       'keypress/Up',
-  down:     'keypress/Down',
-  left:     'keypress/Left',
-  right:    'keypress/Right',
-  select:   'keypress/Select',
-  vol_up:   'keypress/VolumeUp',
-  vol_down: 'keypress/VolumeDown',
-  mute:     'keypress/VolumeMute',
-  play:     'keypress/Play',
-  pause:    'keypress/Play',
-  rew:      'keypress/Rev',
-  fwd:      'keypress/Fwd',
-  ch_up:    'keypress/ChannelUp',
-  ch_down:  'keypress/ChannelDown',
-  input:    'keypress/InputHDMI1',
-  guide:    'keypress/Guide',
-  info:     'keypress/Info',
-  star:     'keypress/InstantReplay',
-  hash:     'keypress/Search',
-  key_0:'keypress/Lit_0', key_1:'keypress/Lit_1', key_2:'keypress/Lit_2',
-  key_3:'keypress/Lit_3', key_4:'keypress/Lit_4', key_5:'keypress/Lit_5',
-  key_6:'keypress/Lit_6', key_7:'keypress/Lit_7', key_8:'keypress/Lit_8',
-  key_9:'keypress/Lit_9',
-};
-
-const SAMSUNG_CMDS = {
-  power:'KEY_POWER', home:'KEY_HOME', back:'KEY_RETURN',
-  up:'KEY_UP', down:'KEY_DOWN', left:'KEY_LEFT', right:'KEY_RIGHT',
-  select:'KEY_ENTER', vol_up:'KEY_VOLUP', vol_down:'KEY_VOLDOWN',
-  mute:'KEY_MUTE', play:'KEY_PLAY', pause:'KEY_PAUSE', rew:'KEY_REWIND',
-  fwd:'KEY_FF', ch_up:'KEY_CHUP', ch_down:'KEY_CHDOWN',
-  input:'KEY_SOURCE', guide:'KEY_GUIDE', info:'KEY_INFO',
-  key_0:'KEY_0', key_1:'KEY_1', key_2:'KEY_2', key_3:'KEY_3',
-  key_4:'KEY_4', key_5:'KEY_5', key_6:'KEY_6', key_7:'KEY_7',
-  key_8:'KEY_8', key_9:'KEY_9',
-};
-
-// ─── SEND COMMAND ────────────────────────────────────────
-async function sendCmd(cmd) {
-  if (!selectedDevice) { showToast('⚠️ Selecione uma TV primeiro'); return; }
-  
-  if (vibrateOn && navigator.vibrate) navigator.vibrate(30);
-
-  const d = selectedDevice;
-  const ip = d.ip;
-  const brand = d.brand;
-
-  try {
-    if (brand === 'roku') {
-      const path = ROKU_CMDS[cmd] || 'keypress/Home';
-      // Usar proxy CORS ou fetch direto
-      const url = `http://${ip}:8060/${path}`;
-      await fetch(url, { method: 'POST', mode: 'no-cors' });
-      showToast('✓ ' + cmd.replace('_',' ').toUpperCase());
-
-    } else if (brand === 'samsung') {
-      // Samsung via WebSocket
-      sendSamsungCmd(ip, SAMSUNG_CMDS[cmd] || 'KEY_HOME');
-
-    } else if (brand === 'lg') {
-      sendLGCmd(ip, cmd);
-
-    } else if (brand === 'sony') {
-      sendSonyCmd(ip, cmd);
-
-    } else {
-      // Genérico — tenta Roku
-      const path = ROKU_CMDS[cmd] || 'keypress/Home';
-      await fetch(`http://${ip}:8060/${path}`, { method:'POST', mode:'no-cors' });
-      showToast('📤 Enviando...');
-    }
-  } catch(e) {
-    showToast('⚠️ Erro de conexão');
-  }
-}
-
-// Samsung WebSocket
-function sendSamsungCmd(ip, key) {
-  try {
-    const ws = new WebSocket(`ws://${ip}:8001/api/v2/channels/samsung.remote.control`);
-    ws.onopen = () => {
-      const payload = {
-        method: 'ms.remote.control',
-        params: { Cmd: 'Click', DataOfCmd: key, Option: 'false', TypeOfRemote: 'SendRemoteKey' }
-      };
-      ws.send(JSON.stringify(payload));
-      setTimeout(() => ws.close(), 500);
-      showToast('✓ Samsung: ' + key);
-    };
-    ws.onerror = () => showToast('⚠️ Samsung: verifique a TV');
-  } catch(e) { showToast('⚠️ Erro Samsung'); }
-}
-
-// LG WebOS
-function sendLGCmd(ip, cmd) {
-  const lgCmds = {
-    power: 'ssap://system/turnOff', home: 'ssap://system.launcher/open',
-    back: 'ssap://com.webos.applicationManager/closeAll',
-    vol_up: 'ssap://audio/volumeUp', vol_down: 'ssap://audio/volumeDown',
-    mute: 'ssap://audio/setMute', play: 'ssap://media.controls/play',
-    pause: 'ssap://media.controls/pause',
-  };
-  try {
-    const ws = new WebSocket(`ws://${ip}:3000`);
-    ws.onopen = () => {
-      const uri = lgCmds[cmd] || 'ssap://system/turnOff';
-      ws.send(JSON.stringify({ type:'request', uri }));
-      setTimeout(() => ws.close(), 500);
-      showToast('✓ LG: ' + cmd);
-    };
-    ws.onerror = () => showToast('⚠️ LG: verifique conexão');
-  } catch(e) { showToast('⚠️ Erro LG'); }
-}
-
-// Sony Bravia
-async function sendSonyCmd(ip, cmd) {
-  const sonyCmds = {
-    power: 'AAAAAQAAAAEAAAAVAw==', home: 'AAAAAQAAAAEAAABgAw==',
-    back: 'AAAAAgAAAJcAAAAjAw==', up: 'AAAAAQAAAAEAAAB0Aw==',
-    down: 'AAAAAQAAAAEAAAB1Aw==', left: 'AAAAAQAAAAEAAAA0Aw==',
-    right: 'AAAAAQAAAAEAAAAzAw==', select: 'AAAAAQAAAAEAAABlAw==',
-    vol_up: 'AAAAAQAAAAEAAAASAw==', vol_down: 'AAAAAQAAAAEAAAATAw==',
-    mute: 'AAAAAQAAAAEAAAAUAw==',
-  };
-  const ircc = sonyCmds[cmd] || sonyCmds['home'];
-  const body = `<?xml version="1.0"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:X_SendIRCC xmlns:u="urn:schemas-sony-com:service:IRCC:1"><IRCCCode>${ircc}</IRCCCode></u:X_SendIRCC></s:Body></s:Envelope>`;
-  try {
-    await fetch(`http://${ip}/sony/IRCC`, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type':'text/xml', 'SOAPACTION':'"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"' },
-      body
+// ============ NAVIGATION ============
+function navigateTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screen).classList.add('active');
+  currentScreen = screen;
+  // Update bottom nav
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navMap = {home:0, remote:1, control:2, mirroring:3, settings:4};
+  const screens = document.querySelectorAll('.bottomnav');
+  screens.forEach(nav => {
+    nav.querySelectorAll('.nav-item').forEach((item, i) => {
+      if (navMap[screen] === i) item.classList.add('active');
+      else item.classList.remove('active');
     });
-    showToast('✓ Sony: ' + cmd);
-  } catch(e) { showToast('⚠️ Sony: erro'); }
+  });
 }
 
-// ─── SCAN NETWORK ────────────────────────────────────────
-async function scanNetwork() {
-  const div = document.getElementById('scanResults');
-  div.innerHTML = `<div class="scanning"><div class="scan-ring"></div><div style="color:var(--text2);font-size:13px">Buscando TVs na rede...<br><span style="font-size:11px;opacity:0.6">Isso pode demorar até 30 segundos</span></div></div>`;
-  showToast('📡 Escaneando rede...');
-
-  // Tenta descobrir IP local
-  let baseIP = '192.168.1';
-  try {
-    const pc = new RTCPeerConnection({iceServers:[]});
-    pc.createDataChannel('');
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    await new Promise(r => setTimeout(r, 1000));
-    const sdp = pc.localDescription?.sdp || '';
-    const match = sdp.match(/\b(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}\b/);
-    if (match) baseIP = match[1];
-    pc.close();
-  } catch(e) {}
-
-  const found = [];
-  const rokuPorts = [8060];
-  
-  // Scan rápido nas portas Roku (8060)
-  const promises = [];
-  for (let i = 1; i <= 254; i++) {
-    const ip = `${baseIP}.${i}`;
-    const p = fetch(`http://${ip}:8060/`, { method:'GET', mode:'no-cors', signal: AbortSignal.timeout(800) })
-      .then(() => found.push({ ip, brand:'roku', name:`Roku ${ip}` }))
-      .catch(() => {});
-    promises.push(p);
-    if (i % 20 === 0) await new Promise(r => setTimeout(r, 100));
-  }
-  await Promise.allSettled(promises);
-
-  if (found.length === 0) {
-    div.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">😔 Nenhuma TV encontrada automaticamente.<br><br>Adicione manualmente com o IP da TV.</div>`;
+function goToRemote(name, brand, icon, conn) {
+  document.getElementById('remoteTitle').textContent = name;
+  document.getElementById('remoteDeviceName').textContent = name;
+  document.getElementById('remoteDeviceBrand').textContent = brand + ' • ' + (conn === 'wifi' ? 'Wi-Fi' : 'IR Blaster');
+  document.getElementById('remoteIcon').textContent = icon;
+  const status = document.getElementById('remoteConnStatus');
+  if (conn === 'wifi') {
+    status.innerHTML = '<span class="signal-dot"></span> Conectado';
+    status.style.color = 'var(--accent3)';
   } else {
-    div.innerHTML = `<div class="section-title" style="margin-top:16px">TVs Encontradas (${found.length})</div>` +
-      found.map(d => `
-        <div style="background:var(--card);border:1px solid var(--success);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-weight:600;font-size:14px">📺 ${d.name}</div>
-            <div style="font-size:11px;color:var(--text2)">${d.ip} · ${BRANDS[d.brand].protocol}</div>
-          </div>
-          <button onclick='addFoundDevice(${JSON.stringify(d)})' style="background:var(--success);color:var(--bg);border:none;padding:8px 14px;border-radius:8px;font-weight:700;cursor:pointer;font-size:12px">Adicionar</button>
-        </div>
-      `).join('');
-    showToast(`✅ ${found.length} TV(s) encontrada(s)`);
+    status.innerHTML = '📡 IR Mode';
+    status.style.color = 'var(--text-muted)';
+  }
+  navigateTo('remote');
+}
+
+// ============ TV COMMANDS ============
+const cmdLabels = {
+  power:'⏻ Power', guide:'📋 Guia', hdmi:'🔌 HDMI', home:'🏠 Home',
+  tools:'🔧 Tools', back:'↩️ Voltar', info:'ℹ️ Info', exit:'✖️ Exit',
+  menu:'📋 Menu', settings_tv:'⚙️ Configurações', search_tv:'🔍 Buscar',
+  up:'▲ Cima', down:'▼ Baixo', left:'◀ Esquerda', right:'▶ Direita', ok:'✅ OK',
+  vol_up:'🔊 Volume ＋', vol_down:'🔉 Volume －', mute:'🔇 Mudo', source:'📥 Fonte',
+  ch_up:'📺 Canal ＋', ch_down:'📺 Canal －',
+  num0:'0', num1:'1', num2:'2', num3:'3', num4:'4', num5:'5',
+  num6:'6', num7:'7', num8:'8', num9:'9',
+  ttx:'📖 Teletexto', prech:'📺 Canal Anterior',
+  rew:'⏮ Retroceder', stop:'⏹ Parar', play:'▶️ Play', fwd:'⏭ Avançar',
+  colorA:'🔴 A', colorB:'🟡 B', colorC:'🟢 C', colorD:'🔵 D',
+  netflix:'🎬 Netflix', youtube:'▶️ YouTube', prime:'📦 Prime', disney:'🏰 Disney+',
+  spotify:'🎵 Spotify', hbo:'🎭 HBO Max', twitch:'🎮 Twitch', browser:'🌐 Browser',
+  sleep_timer:'💤 Sleep Timer ativado', picture_mode:'🎨 Modo Cinema ativado'
+};
+
+function tvCmd(cmd) {
+  cmdCount++;
+  document.getElementById('statCmds').textContent = cmdCount;
+  const label = cmdLabels[cmd] || cmd;
+  showToast('📡 Enviado: ' + label);
+  // Vibration API
+  if (navigator.vibrate) navigator.vibrate(30);
+}
+
+function runMacro(name) {
+  const labels = {
+    cinema:'🍿 Modo Cinema ativado!',
+    gaming:'🎮 Modo Gaming ativado!',
+    morning:'☀️ Rotina Manhã iniciada!'
+  };
+  showToast(labels[name] || 'Macro executada!');
+}
+
+// ============ ADMIN ============
+const ADMIN_USER = 'max9342';
+const ADMIN_PASS = '9342';
+
+function showAdminLogin() {
+  if (adminLoggedIn) { navigateTo('adminPanel'); return; }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('adminLogin').classList.add('active');
+}
+
+function doAdminLogin() {
+  const u = document.getElementById('adminUser').value.trim();
+  const p = document.getElementById('adminPass').value.trim();
+  const err = document.getElementById('loginError');
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    err.classList.remove('show');
+    adminLoggedIn = true;
+    navigateTo('adminPanel');
+    showToast('✅ Bem-vindo, Administrador!');
+  } else {
+    err.classList.add('show');
+    document.getElementById('adminUser').style.borderColor = 'var(--accent2)';
+    document.getElementById('adminPass').style.borderColor = 'var(--accent2)';
+    setTimeout(() => {
+      document.getElementById('adminUser').style.borderColor = '';
+      document.getElementById('adminPass').style.borderColor = '';
+    }, 1500);
   }
 }
 
-function addFoundDevice(d) {
-  d.id = Date.now();
-  devices.push(d);
-  saveDevices();
-  renderDevices();
-  showToast('✅ TV adicionada!');
+function adminLogout() {
+  adminLoggedIn = false;
+  document.getElementById('adminUser').value = '';
+  document.getElementById('adminPass').value = '';
+  navigateTo('settings');
+  showToast('👋 Saiu do painel admin');
 }
 
-// ─── DEVICES ─────────────────────────────────────────────
-function renderDevices() {
-  const grid = document.getElementById('devicesGrid');
-  if (devices.length === 0) {
-    grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:30px;color:var(--text2);font-size:13px">📺 Nenhuma TV salva.<br>Adicione uma TV abaixo.</div>`;
-    return;
-  }
-  grid.innerHTML = devices.map(d => `
-    <div class="device-card ${selectedDevice?.id === d.id ? 'selected' : ''}" onclick="selectDevice(${d.id})">
-      <div class="device-icon">${BRAND_ICONS[d.brand] || '📺'}</div>
-      <div class="device-name">${d.name}</div>
-      <div class="device-info">${d.brand.toUpperCase()} · ${d.ip}</div>
-      <div class="device-status ${selectedDevice?.id === d.id ? 'on' : 'off'}">
-        ${selectedDevice?.id === d.id ? '● Selecionada' : '○ Inativa'}
+// ============ MODALS ============
+function openAddDevice() { document.getElementById('addDeviceModal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function addNewDevice() {
+  const name = document.getElementById('newDeviceName').value.trim() || 'Nova TV';
+  const brand = document.getElementById('newDeviceBrand').value;
+  const conn = document.getElementById('newDeviceConn').value;
+  const icons = {Samsung:'📺', LG:'🖥️', Sony:'📺', TCL:'📺', Roku:'🎬',
+    Hisense:'📺', Vizio:'📺', 'Fire TV':'🔥', 'Android TV':'📱', Philips:'📺', Outra:'📺'};
+  const icon = icons[brand] || '📺';
+  devices.push({ name, brand, icon, conn, connected: false });
+  renderDeviceGrid();
+  updateAdminDeviceList();
+  document.getElementById('statDevices').textContent = devices.length;
+  closeModal('addDeviceModal');
+  showToast('✅ ' + name + ' adicionado!');
+  document.getElementById('newDeviceName').value = '';
+}
+
+function renderDeviceGrid() {
+  const grid = document.getElementById('deviceGrid');
+  grid.innerHTML = devices.map((d, i) =>
+    `<div class="device-card ${d.connected ? 'connected' : ''}" onclick="goToRemote('${d.name}','${d.brand}','${d.icon}','${d.conn}')">
+      <div class="glow-bg"></div>
+      <span class="dc-icon">${d.icon}</span>
+      <div class="dc-name">${d.name.length > 15 ? d.name.substring(0,14)+'…' : d.name}</div>
+      <div class="dc-brand">${d.brand}</div>
+      <span class="dc-status">${d.connected ? '● Conectado' : '○ Desconectado'}</span>
+    </div>`
+  ).join('');
+}
+
+function updateAdminDeviceList() {
+  const list = document.getElementById('adminDeviceList');
+  list.innerHTML = devices.map((d, i) =>
+    `<div class="dla-item">
+      <span class="dla-icon">${d.icon}</span>
+      <div class="dla-info">
+        <div class="dla-name">${d.name}</div>
+        <div class="dla-brand">${d.conn === 'wifi' ? 'Wi-Fi' : 'IR Blaster'} • ${d.connected ? 'Online' : 'Offline'}</div>
       </div>
-    </div>
-  `).join('');
+      <div class="dla-actions">
+        <button class="btn-sm btn-sm-edit" onclick="showToast('✏️ Editando ${d.name}')">✏️</button>
+        <button class="btn-sm btn-sm-del" onclick="removeDeviceByIndex(${i})">🗑️</button>
+      </div>
+    </div>`
+  ).join('');
 }
 
-function selectDevice(id) {
-  selectedDevice = devices.find(d => d.id === id);
-  renderDevices();
-  updateStatus();
-  showRemote();
-  showToast(`📺 ${selectedDevice.name} selecionada`);
-  showPage('remote');
+function removeDevice(btn) {
+  const item = btn.closest('.dla-item');
+  item.style.opacity = '0';
+  item.style.transform = 'translateX(30px)';
+  item.style.transition = 'all 0.3s';
+  setTimeout(() => { item.remove(); showToast('🗑️ Dispositivo removido'); }, 300);
 }
 
-function showRemote() {
-  const hasTV = !!selectedDevice;
-  document.getElementById('noTvMsg').style.display = hasTV ? 'none' : 'block';
-  document.getElementById('remoteControl').style.display = hasTV ? 'block' : 'none';
-  if (hasTV) {
-    document.getElementById('selectedTvName').textContent = selectedDevice.name;
-    document.getElementById('selectedTvIp').textContent = `📡 ${selectedDevice.ip}`;
-    document.getElementById('selectedTvProtocol').textContent = BRANDS[selectedDevice.brand]?.protocol || selectedDevice.brand.toUpperCase();
-  }
+function removeDeviceByIndex(i) {
+  devices.splice(i, 1);
+  renderDeviceGrid();
+  updateAdminDeviceList();
+  document.getElementById('statDevices').textContent = devices.length;
+  showToast('🗑️ Dispositivo removido');
 }
 
-function updateStatus() {
-  const dot = document.getElementById('statusDot');
-  const txt = document.getElementById('statusText');
-  if (selectedDevice) {
-    dot.className = 'status-dot connected';
-    txt.textContent = selectedDevice.name;
-  } else {
-    dot.className = 'status-dot';
-    txt.textContent = 'Sem TV';
-  }
+function openDeviceSwitch() {
+  showToast('📱 ' + devices.length + ' dispositivos disponíveis');
 }
 
-function saveDevices() {
-  localStorage.setItem('unimote_devices', JSON.stringify(devices));
+// ============ TABS ============
+function switchTab(btn, tab) {
+  document.querySelectorAll('#control .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['shortcuts','apps','macros'].forEach(t => {
+    const el = document.getElementById('tab-' + t);
+    if (el) el.style.display = (t === tab) ? 'block' : 'none';
+  });
 }
 
-// ─── ADD MODAL ───────────────────────────────────────────
-function openAddModal() {
-  document.getElementById('addModal').classList.add('show');
-  onBrandChange();
-}
-function closeModal() {
-  document.getElementById('addModal').classList.remove('show');
-}
-function onBrandChange() {
-  const brand = document.getElementById('tvBrand').value;
-  const info = BRANDS[brand];
-  document.getElementById('portHint').innerHTML = `<strong style="color:var(--accent)">💡 ${info.protocol}</strong><br>${info.hint}`;
-}
-function addDevice() {
-  const name = document.getElementById('tvName').value.trim();
-  const brand = document.getElementById('tvBrand').value;
-  const ip = document.getElementById('tvIP').value.trim();
-  if (!name || !ip) { showToast('⚠️ Preencha todos os campos'); return; }
-  const device = { id: Date.now(), name, brand, ip };
-  devices.push(device);
-  saveDevices();
-  renderDevices();
-  closeModal();
-  showToast('✅ TV salva com sucesso!');
+// ============ MIRRORING ============
+function startMirroring() {
+  showToast('📡 Iniciando Screen Mirroring...');
+  setTimeout(() => showToast('✅ Conectado ao Samsung QLED'), 1500);
 }
 
-// ─── APPS PAGE ───────────────────────────────────────────
-const STREAMING_APPS = [
-  { name:'Netflix', icon:'🎬', id:'12', roku_id:'tvinput.hdmi1' },
-  { name:'YouTube', icon:'▶️', id:'13' },
-  { name:'Prime', icon:'📦', id:'13' },
-  { name:'Disney+', icon:'🏰', id:'291097' },
-  { name:'Globoplay', icon:'🌐', id:'tvinput.hdmi1' },
-  { name:'HBO Max', icon:'🎭', id:'tvinput.hdmi1' },
-  { name:'Spotify', icon:'🎵', id:'22297' },
-  { name:'Twitch', icon:'💜', id:'50539' },
-  { name:'Apple TV', icon:'🍎', id:'551012' },
-  { name:'Pluto TV', icon:'👽', id:'74519' },
-  { name:'Tubi', icon:'📹', id:'41468' },
-  { name:'Plex', icon:'🟡', id:'13535' },
-];
-
-const CHANNELS = [
-  { name:'Globo', icon:'🔴' }, { name:'SBT', icon:'🟡' },
-  { name:'Record', icon:'🟠' }, { name:'Band', icon:'🔵' },
-  { name:'CNN BR', icon:'⚪' }, { name:'SportTV', icon:'⚽' },
-];
-
-function renderApps() {
-  document.getElementById('appsGrid').innerHTML = STREAMING_APPS.map(a => `
-    <button class="btn-fav" onclick="openApp('${a.id}','${a.name}')" style="font-size:11px">
-      <span class="fav-icon">${a.icon}</span>${a.name}
-    </button>
-  `).join('');
-  document.getElementById('channelsGrid').innerHTML = CHANNELS.map(c => `
-    <button class="btn-fav" onclick="showToast('📺 ${c.name}')" style="font-size:11px">
-      <span class="fav-icon">${c.icon}</span>${c.name}
-    </button>
-  `).join('');
-}
-
-async function openApp(appId, name) {
-  if (!selectedDevice) { showToast('⚠️ Selecione uma TV'); return; }
-  if (vibrateOn && navigator.vibrate) navigator.vibrate(40);
-  if (selectedDevice.brand === 'roku') {
-    try {
-      await fetch(`http://${selectedDevice.ip}:8060/launch/${appId}`, { method:'POST', mode:'no-cors' });
-      showToast(`🚀 Abrindo ${name}...`);
-    } catch(e) { showToast(`⚠️ Erro ao abrir ${name}`); }
-  } else {
-    showToast(`📱 Abrindo ${name}...`);
-  }
-}
-
-// ─── SETTINGS ────────────────────────────────────────────
-function toggleVibrate() {
-  vibrateOn = !vibrateOn;
-  localStorage.setItem('vibrate', vibrateOn);
-  document.getElementById('toggleVibrate').className = 'toggle ' + (vibrateOn?'on':'');
-  showToast(vibrateOn ? '📳 Vibração ativada' : '🔕 Vibração desativada');
-}
-function toggleSound() {
-  soundOn = !soundOn;
-  localStorage.setItem('sound', soundOn);
-  document.getElementById('toggleSound').className = 'toggle ' + (soundOn?'on':'');
-  showToast(soundOn ? '🔔 Som ativado' : '🔕 Som desativado');
-}
-function clearDevices() {
-  if (!confirm('Apagar todos os dispositivos?')) return;
-  devices = []; selectedDevice = null;
-  saveDevices(); renderDevices(); updateStatus(); showRemote();
-  showToast('🗑️ Dispositivos apagados');
-}
-
-// ─── NAVIGATION ──────────────────────────────────────────
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  const tabs = ['home','remote','apps','settings'];
-  document.querySelectorAll('.tab')[tabs.indexOf(name)]?.classList.add('active');
-  if (name === 'remote') showRemote();
-}
-
-// ─── TOAST ───────────────────────────────────────────────
+// ============ TOAST ============
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -1305,19 +1318,71 @@ function showToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
 }
 
-// ─── INIT ────────────────────────────────────────────────
-renderDevices();
-renderApps();
-updateStatus();
-document.getElementById('toggleVibrate').className = 'toggle ' + (vibrateOn?'on':'');
-document.getElementById('toggleSound').className = 'toggle ' + (soundOn?'on':'');
+// ============ ENTER KEY FOR LOGIN ============
+document.getElementById('adminPass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doAdminLogin();
+});
+document.getElementById('adminUser').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('adminPass').focus();
+});
+</script>
+</div>
 
-// Fechar modal clicando fora
-document.getElementById('addModal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(r => console.log('SW registered'))
+      .catch(e => console.log('SW error', e));
+  });
+}
+
+// PWA Install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show install banner after 3 seconds
+  setTimeout(() => {
+    if (deferredPrompt) showInstallBanner();
+  }, 3000);
 });
 
-console.log('UniMote 2.0 iniciado ✓');
+function showInstallBanner() {
+  const banner = document.createElement('div');
+  banner.id = 'installBanner';
+  banner.innerHTML = `
+    <div style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+      background:#1a1a28;border:1px solid #6c63ff;border-radius:14px;
+      padding:14px 18px;z-index:9999;display:flex;align-items:center;gap:12px;
+      box-shadow:0 4px 30px rgba(108,99,255,0.4);max-width:320px;width:90%">
+      <span style="font-size:28px">📺</span>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13px">Instalar UniMote</div>
+        <div style="font-size:11px;color:#7a7a9a;margin-top:2px">Adicionar à tela inicial</div>
+      </div>
+      <button onclick="installPWA()" style="background:linear-gradient(135deg,#6c63ff,#ff6584);
+        border:none;color:#fff;padding:8px 14px;border-radius:8px;font-weight:700;
+        font-size:12px;cursor:pointer">Instalar</button>
+      <button onclick="document.getElementById('installBanner').remove()"
+        style="background:none;border:none;color:#7a7a9a;font-size:18px;cursor:pointer;padding:4px">✕</button>
+    </div>`;
+  document.body.appendChild(banner);
+}
+
+function installPWA() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(r => {
+      if (r.outcome === 'accepted') showToast('✅ UniMote instalado!');
+      deferredPrompt = null;
+      const b = document.getElementById('installBanner');
+      if (b) b.remove();
+    });
+  } else {
+    showToast('📱 Use "Adicionar à tela inicial" no menu do browser');
+  }
+}
 </script>
 </body>
 </html>
